@@ -271,9 +271,8 @@ General notes about shared memory distributed string sorting (specific sections 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\section{Description of Algos - Find better title}
 
-\subsection{Distributed-Multiway-Mergesort}
+\section{Distributed-Mergesort}
 
 Overview: Algorithm \ref{alg:distributed-merge-sort} showing the ``buildig block'' of the distributed-multiway-mergesort. A simple enumeration + short explanation/description of the different ``buildig blocks" might be better? More details in the following subsections.
 
@@ -302,30 +301,37 @@ Write something about runtime
 Write something about communication volume (dominated by the string-all-to-all exchange) should be in $\mathcal{O}(N)$
 
 
-\subsubsection{String-Based Sampling}
+\subsection{String-Based Sampling}
 
 splitter lengths are bounded by lcp-median.
 
-\subsubsection{Character-Based Sampling}
+\subsection{Character-Based Sampling}
 
 splitter lengths are bounded by lcp-median.
 
-\subsubsection{String All-To-All-Exchange}
+\subsection{String All-To-All-Exchange}
 
 No prefix compression.
 
 Prefix compression using the precalculated lcp values. (Also mention ncessary decompression)
 
-\subsubsection{Merging}
+\subsection{Merging}
 
 Merging using lcp-losertree. 
 
 Short proof why we do not need to decompress the strings for the losertree?
 
-\subsubsection{Decompression}
+\subsection{Decompression}
 
+\subsection{Implementation Details}
 
-\subsection{Prefix-Doubling-Algorithm}
+\subsubsection{Sending Strings/Lcp values using MPI}
+
+Different encoding layouts. One call for string and lcp values: Interleaved, sequential/ One call for strings and lcps values each.
+
+\subsubsection{What else can I mention here?}
+
+\section{Prefix-Doubling-Algorithm}
 
 Overview: Algorithm \ref{alg:PrefixDoubling} showing the ``buildig blocks" of the prefix-doubling approach. Same as above: just a simple enumeration with a short description?
 
@@ -356,7 +362,7 @@ Important: Its communication volume is in $\mathcal{O}(D)$.
 	
 \end{algorithm}
 
-\subsubsection{Prefix-Doubling Approach using Bloomfilter}
+\subsection{Prefix-Doubling Approach using Bloomfilter}
 
 Describe the algorithm in more detail. What do I need to mention, where can/must I cite \cite{sanders2013communication} or/and \cite{schlag2013distributed}?
 
@@ -375,7 +381,7 @@ How much shall I write about golomb encoding?
 	A string $s$ participates in the prefix-doubling-algorithm until the depth is greater than or equal to its distinguishing prefix. In each step of the algorithm the depth is doubled. Hence, $s$ drops out of the process after at most $\lceil{\log(d)} \rceil$ rounds (starting with depth = 2). Therefore, at most $\lceil{\log(d)} \rceil$ hash values are sent for string $s$ in the whole process. Since $\lceil{\log(d)} \rceil \le d$, the total number of hash values sent sums up to at most $D$. It follows that the communication volume of the prefix-doubling algorithm is in $\mathcal{O}(D)$.
 }
 
-\subsubsection{All-To-All-Exchange using Prefix Compression and Distinguishing Prefix Length}
+\subsection{All-To-All-Exchange using Prefix Compression and Distinguishing Prefix Length}
 
 Clearly communication volume is in $\mathcal{O}(D')$. D' is the sum of the distinguishing prefix lengths determined by prefix-doubling. As shown above $D' \le 2 D$. 
 Using Prefix Compression we can even do better. Should be something like $\mathcal{O}(D - L)$. Maybe I should avoid Landau-Notation since 
@@ -383,15 +389,12 @@ Using Prefix Compression we can even do better. Should be something like $\mathc
 n + L \le D \le 2L + n
 \] (see \cite{bingmann2018scalable}).
 
+\subsection{Implementation Details}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Implementation Details}
 
-\subsection{Sending Strings/Lcp values using MPI}
-
-Different encoding layouts. One call for string and lcp values: Interleaved, sequential/ One call for strings and lcps values each.
-
-\subsection{What else can I mention here?}
 	
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
