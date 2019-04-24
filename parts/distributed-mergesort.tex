@@ -1,0 +1,37 @@
+In this section we describe our distributed \emph{Mergesort}-based approach to the following string sorting problem.
+
+\begin{enumerate}
+	\item \textbf{Input:} We sort a (multi-)set $S$ consisting of $n$ strings and $N$ characters. Each of the $p$ PE obtains either $\mathcal{O}(n/p)$ strings or a number of strings such that each PE has $\mathcal{O}(N/p)$ characters.
+	\item \textbf{Output:} PE $i$ has a (multi-)set of strings $O_i$ with the following properties: \textcolor{red}{set might not be the right term}
+	\begin{enumerate}
+		\item The set $O_i$ is sorted locally.
+		\item Let $i$ and $j$ be the indices of two PEs with $i < j$, then for all strings $s_i \in O_i$ and all strings $s_j \in O_j$ we find $s_i < s_j$.
+	\end{enumerate}
+\end{enumerate} 
+The size and number of characters in the output sets $o_i$ depends on the splitting methods used (see \ref{merge_sort_sampling}).
+
+The algorithm consists of the following building blocks:
+
+\begin{enumerate}
+	\item \textbf{Local sorting:} Each PE sorts its input set locally. We also determine the LCP-values of the local string set as a by-product.
+	\item \textbf{Splitter sampling:} \label{merge_sort_sampling}Since the input set is already sorted, each PE can sample $s$ splitter equidistantly. From all $p \cdot s$ local samples $p-1$ splitters are globally determined and all local input sets are partitioned into $p$ buckets accordingly. 
+	\item \textbf{String exchange:} The PEs perform an all-to-all exchange of the strings. On PE $i$ bucket $j$ determined in the previous step is sent to PE $j$. After this step all strings on PE $i$ are smaller than the strings on PE $j$ provided that $i$ < $j$.
+	\item \textbf{Merging:} Although the strings are already globally sorted, as pointed out above, we still need to sort the received buckets on each PE. Since the buckets are already sorted we can use a multiway merge algorithm in this step.
+\end{enumerate}
+
+\subsection{Local Sorting}
+Bingmann evaluated in his dissertation \cite{bingmann2018scalable} many sequential string sorting algorithms. We use an in-place radixsort variant as local sorter which is extended such that the LCP-values are computed while sorting with very small overhead \textcolor{red}{empirical evalutation needed for this assumption?}.
+
+\begin{itemize}
+	\item \textcolor{red}{say something about asymptotic run time}
+\end{itemize}
+
+\subsection{Splitter Sampling}
+The goal of this step is to determine splitters such that the workload on each PE is nearly the same in the subsequent steps of the algorithm. When sorting atomic keys (i.e. integers or other fixed-length data) this correlates very well with the number of elements \textcolor{red}{citation needed?}. Thus, one tries to choose splitters such that about the same number of elements is distributed to each PE. Sorting strings differs in this respect. The main subsequent steps following the splitter selection are the all-to-all-string exchange and merging of the exchanged buckets. The runtime of the all-to-all-exchange is \textcolor{red}{look for alltoallexchange runtime} does not only depend on the number of exchanged strings but also on the size of these strings. On what concerns merging, it is not clear \textcolor{red}{merging evaluation, same number chars or strings}. 
+This difference motivates the analysis of character-based sampling, i.e. sampling whose goal is to achieve nearly equal amounts of character on each PE after the all-to-all string exchange.
+
+\subsubsection{String Based Sampling}
+The \emph{String Based Sampling} approach aims at choosing splitters such that the number of strings on all PEs after the string exchange is equal. The local sampling is done as described in algorithm
+\subsubsection{Character Based Sampling}
+
+
