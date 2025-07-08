@@ -13,7 +13,7 @@
 \usepackage{lmodern}
 
 % Sprache des Dokuments (für Silbentrennung und mehr)
-\usepackage[german,english]{babel}
+\usepackage[english]{babel}
 
 % Seitengröße - verwende fast die ganze A4 Seite
 \usepackage[tmargin=22mm,bmargin=22mm,lmargin=20mm,rmargin=20mm]{geometry}
@@ -35,7 +35,7 @@
 \numberwithin{equation}{section}
 
 % Deutsches Literaturverzeichnis
-\usepackage{bibgerm}
+% \usepackage{bibgerm}
 
 % Unterstützung zum Einbinden von Graphiken
 \usepackage{graphicx}
@@ -55,6 +55,7 @@
 % TikZ für Graphiken in LaTeX
 \usepackage{tikz}
 \usetikzlibrary{calc}
+\usepackage{subcaption}
 
 % Aktuelle Section und Untersection am Seitenkopf
 \usepackage{fancyhdr}
@@ -83,9 +84,9 @@
 \usepackage{xcolor,hyperref}
 
 \hypersetup{
-  pdftitle={Hier den Titel der Arbeit},
-  pdfauthor={Hier den Author der Arbeit},
-  pdfsubject={Stichworte, weiteres Stichwort},
+  pdftitle={	Combining Memory-Efficient Parallel SAT Solving and Distributed Clause Sharing},
+  pdfauthor={Ruben Götz},
+  pdfsubject={},  % TODO: add tags
   colorlinks=true,
   pdfborder={0 0 0},
   bookmarksopen=true,
@@ -106,7 +107,7 @@
 \def\NlSty#1{\textnormal{\fontsize{8}{10}\selectfont{}#1}}
 \SetKwSty{texttt}
 \SetCommentSty{emph}
-\def\listalgorithmcfname{Algorithmenverzeichnis}
+%\def\listalgorithmcfname{Algorithmenverzeichnis}
 \def\algorithmautorefname{Algorithmus}
 \let\chapter=\section % repariert ein Problem mit algorithm2e
 
@@ -129,35 +130,35 @@
     Master Thesis
     \vspace*{2cm}
 
-    {\huge Distributed String Sorting Algorithms \par}
+    {\huge 	Combining Memory-Efficient Parallel SAT Solving and Distributed Clause Sharing \par}
     % Siehe auch oben die Felder pdftitle={}
     % mit \par am Ende stimmt der Zeilenabstand
 
     \vfill
 
-    Matthias Schimek
+    Ruben Götz
 
     \vspace*{15mm}
 
-    7 July 2019
+    15. August 2025
 
     \vspace*{45mm}
 
     \begin{tabular}{rl}
       Betreuer: & Prof. Dr. Peter Sanders \\
-      & Dipl. Inform. Zweiter Betreuer \\
+      & Dr. rer. nat. Dominik Schreiber \\
     \end{tabular}
     
     \vspace*{10mm}
 
-    Institut für Theoretische Informatik, Algorithmik \\
-    Fakultät für Informatik \\
-    Karlsruher Institut für Technologie
+    % Institut für Theoretische Informatik, Algorithmik \\
+    % Fakultät für Informatik \\
+    % Karlsruher Institut für Technologie
 
     % English:
-    % Institute of Theoretical Informatics, Algorithmics \\
-    % Department of Informatics \\
-    % Karlsruhe Institute of Technology
+    Institute of Theoretical Informatics, Algorithmics \\
+    Department of Informatics \\
+    Karlsruhe Institute of Technology
 
     \vspace*{12mm}
   \end{center}
@@ -175,7 +176,7 @@ Hiermit versichere ich, dass ich diese Arbeit selbständig verfasst und keine an
 \bigskip
 
 \noindent
-Ort, den Datum
+Ort, Datum
 
 % Unterschrift (handgeschrieben)
 
@@ -187,20 +188,20 @@ Ort, den Datum
 
 \vspace*{0pt}\vfill
 
+% \selectlanguage{english}
+% \begin{abstract}
+% \centerline{ Zusammenfassung}
+%
+% Hier die deutsche Zusammenfassung
+%
+% \end{abstract}
+%
+% \vfill
+
 \selectlanguage{english}
 \begin{abstract}
-\centerline{ Zusammenfassung}
-
-Hier die deutsche Zusammenfassung
-
-\end{abstract}
-
-\vfill
-
-\selectlanguage{english}
-\begin{abstract}
-\centerline{ Abstract}
-
+\centerline{Abstract}
+  TODO: write some Abstract.
 \end{abstract}
 \selectlanguage{english}
 
@@ -209,13 +210,13 @@ Hier die deutsche Zusammenfassung
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\vspace*{0pt}\vfill
-
-\section*{Danksagungen}
-
-
-\vfill\vfill\vfill
-\clearpage
+% \vspace*{0pt}\vfill
+% 
+% \section*{Danksagungen}
+% 
+% 
+% \vfill\vfill\vfill
+% \clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -233,7 +234,7 @@ Hier die deutsche Zusammenfassung
 
 \listoffigures
 \listoftables
-\listofalgorithms
+% \listofalgorithms
 
 \clearpage
 
@@ -241,16 +242,19 @@ Hier die deutsche Zusammenfassung
 
 \section{Introduction}
 
+TODO: write some introduction into parallel sat solving in general
+
 \subsection{Motivation}
 
-??
+Memory in Cloud applications can be expensive or highly limited on slim processing nodes. We thus want to try to limit memory consumption by combining gimsatul -- a shared memory clause sharing satsolver -- with the hyper parallel sat-solver MallobSAT.\\
+
+TODO: make motivation a meaningfull paragraph
 
 \subsection{Contribution}
 
-First paper/thesis about distributed string sorting (Except for\cite{fischer2019lightweight}). Write about difference to simple algorithm in this paper, i.e. LCP-Computation, Prefix-Compression, LCP-Losertree.
+Combined two clause sharing approaches.\\
 
-New prefix-doubling approach (only computes permutation) \cite{sanders2013communication}
-
+TODO: an overview over what we did in this thesis
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -259,168 +263,338 @@ New prefix-doubling approach (only computes permutation) \cite{sanders2013commun
 
 \subsection{Definitions}
 
-Some convention about PEs, (Multi-)sets of strings to sort.
-
-Distinguishing Prefixes and their sum $D$, Longest Common Prefixes and their sum $L$. Total number of characters of the stringset $N$ 
+TODO: some Definitions used in this thesis. Probably a fairly small section due to the emphasis on engineering.
 
 \subsection{Related Work}
 
-``simple'' distributed string sorting in \cite{fischer2019lightweight}
+TODO: talk about sat solving in general
 
-General notes about shared memory distributed string sorting (specific sections in \cite{bingmann2018scalable})
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Parallel SAT-Solving}
 
+TODO: talk about the state of the Art in parallel SAT-Solving
 
+\subsubsection{Memory Efficient SAT-Solving}
 
-\section{Distributed Mergesort}
-\input{parts/distributed-mergesort}
-
-Overview: Algorithm \ref{alg:distributed-merge-sort} showing the ``buildig block'' of the distributed-multiway-mergesort. A simple enumeration + short explanation/description of the different ``buildig blocks" might be better? More details in the following subsections.
-
-\begin{algorithm}
-	\caption{Distributed-Multiway-Mergesort : General Algorithm}\label{alg:distributed-merge-sort}
-	\SetKwFunction{DFS}{DFS}
-	\SetKwFunction{sortLocally}{sort}
-	\SetKwFunction{choseSplitter}{chooseSplitters}
-	\SetKwFunction{partition}{partition}
-	\SetKwFunction{exchange}{exchange}
-	\SetKwFunction{merge}{merge}`
-	\KwIn{On each PE: a multiset $s$ of strings with $|s| = n / p$}
-	\BlankLine
-	\sortLocally{$s$} \tcp*{sort locally}
-	$splitters \leftarrow \choseSplitter{s}$ \tcp*{choose $p-1$ splitters}
-	$s' \leftarrow \partition{s, splitters}$ \tcp*{partition $s$ into $p$ multisets $s'$}
-	$s'' \leftarrow \exchange(s')$ \; 
-	$s''' \leftarrow \merge(s'')$
-	
-	\KwOut{A sorted multiset of strings $s'''$ and its lcp values}
-	
-\end{algorithm}
-
-Write something about runtime 
-
-Write something about communication volume (dominated by the string-all-to-all exchange) should be in $\mathcal{O}(N)$
-
-
-\subsection{String-Based Sampling}
-
-splitter lengths are bounded by lcp-median.
-
-\subsection{Character-Based Sampling}
-
-splitter lengths are bounded by lcp-median.
-
-\subsection{String All-To-All-Exchange}
-
-No prefix compression.
-
-Prefix compression using the precalculated lcp values. (Also mention ncessary decompression)
-
-\subsection{Merging}
-
-Merging using lcp-losertree. 
-
-Short proof why we do not need to decompress the strings for the losertree?
-
-\subsection{Decompression}
-
-\subsection{Implementation Details}
-
-\subsubsection{Sending Strings/Lcp values using MPI}
-
-Different encoding layouts. One call for string and lcp values: Interleaved, sequential/ One call for strings and lcps values each.
-
-\subsubsection{What else can I mention here?}
-
-\section{Prefix-Doubling-Algorithm}
-
-Overview: Algorithm \ref{alg:PrefixDoubling} showing the ``buildig blocks" of the prefix-doubling approach. Same as above: just a simple enumeration with a short description?
-
-This algorithms only determines the \textcolor{red}{sorting permutation (better expression ?)}. 
-
-Runtime more or less same as above + bloomfilter.
-
-Important: Its communication volume is in $\mathcal{O}(D)$.
-\begin{algorithm}
-	\caption{Prefix-Doubling Approach: General Algorithm}\label{alg:PrefixDoubling}
-	\SetKwFunction{DFS}{DFS}
-	\SetKwFunction{sortLocally}{sort}
-	\SetKwFunction{bloomfilter}{bloomfilter}
-	\SetKwFunction{choseSplitter}{chooseSplitters}
-	\SetKwFunction{partition}{partition}
-	\SetKwFunction{exchange}{exchange}
-	\SetKwFunction{merge}{merge}
-	\KwIn{On each PE: a multiset $s$ of strings with $|s| = n / p$}
-	\BlankLine
-	\sortLocally{$s$} \tcp*{sort locally}
-	$dPrefixes \leftarrow \bloomfilter(s)$ \tcp*{determine distinguishing prefix of each string}
-	$splitters \leftarrow \choseSplitter{s}$ \tcp*{choose $p-1$ splitters}
-	$s' \leftarrow \partition{s, splitters}$ \tcp*{partition $s$ into $p$ multisets $s'$}
-	$s'' \leftarrow \exchange(s', dPrefix)$ \; 
-	$s''' \leftarrow \merge(s'')$
-	
-	\KwOut{A sorted multiset of strings $s'''$ and its lcp values}
-	
-\end{algorithm}
-
-\subsection{Prefix-Doubling Approach using Bloomfilter}
-
-Describe the algorithm in more detail. What do I need to mention, where can/must I cite \cite{sanders2013communication} or/and \cite{schlag2013distributed}?
-
-How much shall I write about golomb encoding? 
-
-\Lemma[DistinguishinPrefixLength] {
-	Let $d$ be the length of the distinguishing prefix of a string $s$ in a multiset $S$. By $d'$ we denote the value found with the prefix-doubling approach. Then, $d \le d' \le 2 \cdot d$ holds.
-	\textcolor{red}{Assumption: No collision in hashfunction -> otherwise a probabilistic value}
-}
-\Lemma[Communication volume] {
-	The communication volume of the algorithm is in $\mathcal{O}(D)$.
-	\textcolor{red}{Assumption: No collision in hashfunction -> otherwise a probabilistic value}
-}
-\proof{
-	
-	A string $s$ participates in the prefix-doubling-algorithm until the depth is greater than or equal to its distinguishing prefix. In each step of the algorithm the depth is doubled. Hence, $s$ drops out of the process after at most $\lceil{\log(d)} \rceil$ rounds (starting with depth = 2). Therefore, at most $\lceil{\log(d)} \rceil$ hash values are sent for string $s$ in the whole process. Since $\lceil{\log(d)} \rceil \le d$, the total number of hash values sent sums up to at most $D$. It follows that the communication volume of the prefix-doubling algorithm is in $\mathcal{O}(D)$.
-}
-
-\subsection{All-To-All-Exchange using Prefix Compression and Distinguishing Prefix Length}
-
-Clearly communication volume is in $\mathcal{O}(D')$. D' is the sum of the distinguishing prefix lengths determined by prefix-doubling. As shown above $D' \le 2 D$. 
-Using Prefix Compression we can even do better. Should be something like $\mathcal{O}(D - L)$. Maybe I should avoid Landau-Notation since 
-\[
-n + L \le D \le 2L + n
-\] (see \cite{bingmann2018scalable}).
-
-\subsection{Implementation Details}
-
+TODO: talk about approaches that have been taken to reduce memory demand in parallel sat-solving.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\section{The Algorithm}
 
-	
+TODO: Discuss gimsatul \cite{gimsatul}, MallobSAT \cite{dominikPhd} and the Architecture used to combine the two.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\newpage
 \section{Experimental Evaluation}
-\subsection{Data}
-\subsubsection{DToNGenerator}
-Write something about the DToNGenerator.
+
+In this section we want to discuss the findings of our experimental results of our algorithm. All experiments in this section were conducted on the superMUC-NG cluster equiped with Intel Skylake Xeon Platinum 8174 processors. We evaluated our Algorithm on up to 16 of the the superMUC-NG's thin nodes, all containing 48 cores (96 hardware threads) with 96GB memory.
+
+TODO: SuperMUC citation? I didnt find anything...
+
+\subsection{Benchmarks}
+To evaluate our algorithm we used benchmark instances provided by Iser et al. on their Global Benchmark Database \cite{benchmarkDB}. Specifically we used the 400 instances contained in the track main\_2024 that was used in the 2024 SAT competition \cite{satCompetition}, containing a myriad of different problems encoded as SAT instances.
+
+\subsection{Configuration}
+We ran our Algorithm with one gimsatul instance per node, i.e. 48 threads in one shared memory instance. Running multiple Gimsatul instances on the same node proved to yield comparable or worse results to only one instance per node with significant memory costs. Using the nodes capability of hyperthreading to exploit all 96 virtual threads was not supported by Mallob on the superMUC-NG cluster. We would not expected an increase in performance in this case regardles, since in all cases the configurations utilizing hall 96 virtual nodes performed worse that their counter parts with only the 48 hardware threads. Figure \ref{fig:1nodeConfigCompare} shows our results for all the thread configurations we tested on one node. To save on computing time, we reason that the best configuration for one node will also be the best for multiple nodes instead of testing them all on multiple nodes. To reinforce this argument we tried the best two configurations for one node on 2 compute nodes as shown in figure \ref{fig:2nodeConfigCompare}. In the following we will denote the two configurations as follows:
+\begin{itemize}
+  \item[$A$:] 1 Gimsatul instance with 48 threads per node
+  \item[$B$:] 2 Gimsatul instances with 24 threads each per node
+\end{itemize}
+In our experiments configuartion $B$ solved 10 benchmark instances, that configuration $A$ did not solve within a 300s time limit. Of these 10 instances 7 were SAT and thus some of them may be contributed to lucky non determinism. Configuration $B$ solved 3 instances, that configuration A could not solve within the time limit. We opted for the configuration $A$ mainly for for its significantly more efficient memory usage as shown in figure \ref{fig:2nodeConfigMemCompare}.
+
+\begin{figure}
+  \center
+  \includegraphics{plots/config_compare/1node_config_compare.png}
+  \caption{Comparison between thread configurations on a single node.}
+  \label{fig:1nodeConfigCompare}
+\end{figure}
+
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{0.4\textwidth}
+    \center
+    \includegraphics[scale=0.5]{plots/config_compare/2node_config_compare.png}
+    \caption{}
+    \label{2nodeConfigRuntimeCompare}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[c]{0.4\textwidth}
+    \center
+    \includegraphics[scale=0.5]{plots/config_compare/2node_config_mem_compare.png}
+    \caption{}
+    \label{fig:2nodeConfigMemCompare}
+  \end{subfigure}
+  \caption{Comparison betweed thread configurations on two nodes.}
+  \label{fig:2nodeConfigCompare}
+\end{figure}
+
+To further configure MallobSAT's options we implemented a search only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e. no simplifying or probing. To preprocess the formula we utilized the Kissat SAT-solver \cite{kissat}. We found a significant increase in performance due to this practice. (TODO: give a figure? This experiment was only run on the institute servers...)
+
+\subsection{Runtime and Memory Usage}
+
+We first want to discuss our findings on runtime regarding the scalability on up to 16 nodes (i.e. 768 processors). We then compare our Algorithm to the state of the art distributed SAT-solver MallobSAT with its default configuration utilizing one Kissat instance per processor.
+
+\subsubsection{Speedups}
+
+As shown in figure \ref{fig:runtimeCompareGim} we ran our algorithm on 1, 2, 4, 8 and 16 nodes respectively. We can see an increase in performance with an increasing amount of available processing power, albeit with deminishing returns.
+
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{\textwidth}
+    \center
+    \includegraphics{plots/cumulative_runtime/scalability_gim.png}
+    \subcaption{Scalability Our Approach}
+    \label{fig:runtimeCompareGim}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[c]{\textwidth}
+    \center
+    \includegraphics{plots/cumulative_runtime/scalability_kis.png}
+    \subcaption{Scalability MallobSAT}
+    \label{fig:runtimeCompareKis}
+  \end{subfigure}
+  \caption{Some Example plot on scalability}
+  \label{fig:scale}
+\end{figure}
+
+To calculate Speedups we ran the sate of the art serial SAT-solver Kissat for up to 3000s on a single processor. The results of this run are shown in figure \ref{fig:runtimeSerial}. The geometric means over all speedups for benchmark instances solved by Kissat are shown in table \ref{tab:speedups}. We can see an increase in the geometric mean speedup for our algorithm with increasing amounts of processors, albeit with deminishing returns. The specific speedups for all instances that were solved by Kissat in a timelimit of 3000s are shown in figure \ref{fig:speedups}. Here we can observe a great variance in speedups for simple instances (i.e. instances Kissat solved in under 500 seconds). For complex instances (i.e. instances where Kissat needed more than 500 seconds) we can see a tendency for the speedups to become greater. For really complex instances the speedups routily beat the geometric mean while their variance increases even more.
+
+\begin{figure}
+  \center
+  \includegraphics{plots/cumulative_runtime/runtime_serial.png}
+  \caption{Scalability of serial Kissat}
+  \label{fig:runtimeSerial}
+\end{figure}
+
+\begin{table}
+  \center
+  \begin{tabular}{ c|c|c|c }
+    \multicolumn{2}{c|}{Setup} & \multicolumn{2}{c}{Solver}\\
+    \hline
+    \#nodes   & \#processors   & Our Algorithm  & MallobSAT \\
+    \hline
+    1  & 48  & 5.389  & 7.847\\
+    \hline
+    2  & 96  & 7.376   & -\\
+    \hline
+    4  & 192 & 8.027   & 14.034\\
+    \hline
+    8  & 384 & 9.425    & -\\
+    \hline
+    16 & 762 & 10.185   & 20.073
+  \end{tabular}
+  \caption{Geometric mean speedups for number of processors}
+  \label{tab:speedups}
+\end{table}
+
+\begin{figure}
+  \center
+  \includegraphics{plots/speedups_gim.png}
+  \caption{Speedups of our Algorithm. TODO: make plot pretty}
+  \label{fig:speedups}
+\end{figure}
+
+%%
+% Speedup < 1:
+%   cryptography-simon: 10/10   alle sat
+%   heule-folkman: 3/11   alle sat
+%   maxsat-optimum: 1/13
+%   miter: 9/47
+%   planning: 1/6 alle unsat
+%   reg-n: 2/4 alle unsat
+%   scheduling: 2/50
+%   software-verification: 2/15 alle unsat
+%   subgraph-isomorphism: 2/4   die beiden sat sind langsamer, die beiden unsat schneller
+
+TODO: is "negative speedup" correct?
+
+For all instances of the family 'cryptography-simon' we found a negative speedup for all setups of our algorithm, which may suggest a systematic discompatibility between our approach and this kind of problem. All Instances of the family 'cryptography-simon' in our benchmark set however were solved in under $0.01s$ by Kissat. Since the fastest meassured runtime of our approach is $0.030417s$ for the instance 'simon-r24-1.sanitized' we attribute any slowdown for instances below $0.03s$ to our increased startup overhead in relation to Kissats serial startup.
+
+For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satCompetition} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}.
+
+TODO: give a reason?
+
+\begin{table}
+  \center
+  \begin{tabular}{ c|c }
+    Solver  & \#Instances solved\\
+    \hline
+    Kissat  & 10\\
+    \hline
+    1node   & 1\\
+    \hline
+    2node   & 1\\
+    \hline
+    4node   & 1\\
+    \hline
+    8node   & 2\\
+    \hline
+    16node  & 3
+  \end{tabular}
+  \caption{Number of instances solved out of the 10 instances from the Family 'heule-folkman'.}
+  \label{tab:heuleFolkman}
+\end{table}
+
+\subsubsection{Comparison to MallobSAT}
+
+Figure \ref{fig:runtimeCompare} shows the comparisons between the runtimes for Mallob on the x-axis and our Approach on the y-axis for all instances that were solved by both algorithms. We differentiated into satisfiable and unsatisfiable instances. While the satisfiable instances show a wider variance than the unsatisfiable ones it is clear, that our approach sacrifices runtime efficiency for our attempt to increase memory efficiency. Especially for complex instances we can observe a clear tendancy for our algorithm to take up to an order of magnitude more time. We can see this trend for all setups.
+
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.5]{plots/square_runtime_compare/square_runtime_1node.png}
+    \subcaption{1 node}
+    \label{fig:runtimeCompare1node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.5]{plots/square_runtime_compare/square_runtime_4node.png}
+    \subcaption{4 node}
+    \label{fig:runtimeCompare4node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.5]{plots/square_runtime_compare/square_runtime_16node.png}
+    \subcaption{16 node}
+    \label{fig:runtimeCompare16node}
+  \end{subfigure}
+  \caption{Runtime Comparison between MallobSAT and our algorithm}
+  \label{fig:runtimeCompare}
+\end{figure}
+
+Figure \ref{fig:memCompare} shows the comparisons for the memory consumption between our approach and MallobSAT in a similar manner, with MallobSAT's peak memory consumption on the x-axis and the peak memory consumption of our algorith on the y-axis. Again we differentiated into satisfiable and unsatisfiable instances. Here we can clearly see our approach consuming less memory in almost all cases.
+
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.5]{plots/square_mem_compare/square_mem_1node.png}
+    \subcaption{1 node}
+    \label{fig:memCompare1node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.5]{plots/square_mem_compare/square_mem_4node.png}
+    \subcaption{4 node}
+    \label{fig:memCompare4node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.5]{plots/square_mem_compare/square_mem_16node.png}
+    \subcaption{16 node}
+    \label{fig:memCompare16node}
+  \end{subfigure}
+  \caption{Memory Comparison between MallobSAT and our algorithm}
+  \label{fig:memCompare}
+\end{figure}
+
+
+
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/1node_compare/mem_ratio_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/4node_compare/mem_ratio_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/16node_compare/mem_ratio_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \caption{Memory ratios over variables.}
+  \label{fig:memRatiosVars}
+\end{figure}
+
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/1node_compare/mem_gm_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/4node_compare/mem_gm_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/16node_compare/mem_gm_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \caption{geometric means for memory ratios over variables.}
+  \label{fig:memGmVars}
+\end{figure}
+
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/1node_compare/mem_ratio_per_second.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/4node_compare/mem_ratio_per_second.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/16node_compare/mem_ratio_per_second.png}
+    \caption{1 node}
+  \end{subfigure}
+  \caption{Memory ratios per second for all instances that ran the full 300s.}
+  \label{fig:memRatiosSecs}
+\end{figure}
+
+% 1node 75-percentile for all memory ratios: 3.9035953177257525
+% 1node Geometric mean of geometric means: 0.2826566387020432
+
+% 4node 75-percentile for all memory ratios: 4.376587301587302
+% 4node Geometric mean of geometric means: 0.25621625192024783
+
+% 16node 75-percentile for all memory ratios: 4.820217834212041
+% 16node Geometric mean of geometric means: 0.21154183679147623
+
+
+
+
+\subsection{Miscallaneous Findings?}
+
+TODO: Any interesting findings that have no other place. Collected Statistics for maybe?
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\newpage
 \section{Conclusion}
 
+\subsection{Runtime-Memory Tradeoff}
+
+TODO: Is the longer runtime worth the saved memory?
+
+\subsection{Usecases of our Algorithm}
+
+TODO: In what situations would our algorithm be preferable to other approaches?
+
+\subsection{Future Work}
+
+TODO: write a (hopefully short) paragraph about what we didn't have time for anymore :(
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-
 
 \clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\bibliographystyle{gerplain}
+\bibliographystyle{eptcs}
 \bibliography{literatur}
 
 \end{document}
