@@ -84,7 +84,7 @@
 \usepackage{xcolor,hyperref}
 
 \hypersetup{
-  pdftitle={	Combining Memory-Efficient Parallel SAT Solving and Distributed Clause Sharing},
+  pdftitle={Combining Memory-Efficient Parallel SAT Solving and Distributed Clause Sharing},
   pdfauthor={Ruben Götz},
   pdfsubject={},  % TODO: add tags
   colorlinks=true,
@@ -411,7 +411,7 @@ TODO: is "negative speedup" correct?
 
 For all instances of the family 'cryptography-simon' we found a negative speedup for all setups of our algorithm, which may suggest a systematic discompatibility between our approach and this kind of problem. All Instances of the family 'cryptography-simon' in our benchmark set however were solved in under $0.01s$ by Kissat. Since the fastest meassured runtime of our approach is $0.030417s$ for the instance 'simon-r24-1.sanitized' we attribute any slowdown for instances below $0.03s$ to our increased startup overhead in relation to Kissats serial startup.
 
-For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satCompetition} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}.
+For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satCompetition} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}. We currently can not give a specific reason for this phenomenon, however Schreiber et al. \cite{searchOnlyPaper} also found the search only approach in MallobSAT to be non-beneficial on this family of instances. We therefore conclude that some inprocessing techniques applied by Kissat make huge improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance our approach seems to be unsuitable for the 'heule-folkman' family.
 
 TODO: give a reason?
 
