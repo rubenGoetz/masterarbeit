@@ -413,8 +413,6 @@ For all instances of the family 'cryptography-simon' we found a negative speedup
 
 For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satCompetition} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}. We currently can not give a specific reason for this phenomenon, however Schreiber et al. \cite{searchOnlyPaper} also found the search only approach in MallobSAT to be non-beneficial on this family of instances. We therefore conclude that some inprocessing techniques applied by Kissat make huge improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance our approach seems to be unsuitable for the 'heule-folkman' family.
 
-TODO: give a reason?
-
 \begin{table}
   \center
   \begin{tabular}{ c|c }
@@ -437,6 +435,8 @@ TODO: give a reason?
 \end{table}
 
 \subsubsection{Comparison to MallobSAT}
+
+In the following we denote benchmark instances that have been solved by all solvers present in a given context to be solved instances. We complementairy denote instances that have not been solved by at least one of the solvers in a given context as un- or partially solved instances.
 
 Figure \ref{fig:runtimeCompare} shows the comparisons between the runtimes for Mallob on the x-axis and our Approach on the y-axis for all instances that were solved by both algorithms. We differentiated into satisfiable and unsatisfiable instances. While the satisfiable instances show a wider variance than the unsatisfiable ones it is clear, that our approach sacrifices runtime efficiency for our attempt to increase memory efficiency. Especially for complex instances we can observe a clear tendancy for our algorithm to take up to an order of magnitude more time. We can see this trend for all setups.
 
@@ -464,7 +464,7 @@ Figure \ref{fig:runtimeCompare} shows the comparisons between the runtimes for M
   \label{fig:runtimeCompare}
 \end{figure}
 
-Figure \ref{fig:memCompare} shows the comparisons for the memory consumption between our approach and MallobSAT in a similar manner, with MallobSAT's peak memory consumption on the x-axis and the peak memory consumption of our algorith on the y-axis. Again we differentiated into satisfiable and unsatisfiable instances. Here we can clearly see our approach consuming less memory in almost all cases.
+Figure \ref{fig:memCompare} shows the comparisons for the memory consumption between our approach and MallobSAT in a similar manner, with MallobSAT's peak memory consumption on the x-axis and the peak memory consumption of our algorithm on the y-axis. Again we differentiated into satisfiable and unsatisfiable instances. Here we can clearly see our approach consuming less memory in almost all cases.
 
 \begin{figure}
   \center
@@ -490,7 +490,61 @@ Figure \ref{fig:memCompare} shows the comparisons for the memory consumption bet
   \label{fig:memCompare}
 \end{figure}
 
+The exact memory consumption of our algorithm as well as MallobSAT is shown in figure \ref{fig:memAbsVars}. The mean memory Consuptions over all instances are shown in table \ref{tab:memMean}. For solved instances we find th ratio between MallobSAT's mean memory consumption and the memory consumption of our algorithm to be $1.872$ for 1 node, $1.827$ for 4 nodes and $1.868$ for 16 nodes. For all instances we find the ratios to be a little smaller, with $1.897$ for 1 node, $1.66$ for 4 nodes and $1.725$ for 16 nodes.
 
+\begin{figure}
+  \center
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/1node_compare/mem_abs_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/4node_compare/mem_abs_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \begin{subfigure}[c]{.4\textwidth}
+    \center
+    \includegraphics[scale=.3]{plots/16node_compare/mem_abs_over_vars.png}
+    \caption{1 node}
+  \end{subfigure}
+  \caption{Memory consumption over variables.}
+  \label{fig:memAbsVars}
+\end{figure}
+
+\begin{table}
+  \center
+  \begin{tabular}{ c|c|c|c|c|c }
+    \multicolumn{2}{c|}{} & \multicolumn{2}{c|}{Solved Instances} & \multicolumn{2}{c}{All Instances}\\
+    \hline
+    \#nodes & \#processors & Our Algorithm & MallobSAT & Our Algorithm & MallobSAT \\
+    \hline
+    1  & 48  & 3.672GB & 6.875GB & 4.477GB & 8.494GB\\
+    \hline
+    2  & 96  & 7.081GB & - & 9.321GB & -\\
+    \hline
+    4  & 192 & 14.030GB & 25.631GB & 18.621GB & 30.921GB\\
+    \hline
+    8  & 384 & 28.092GB & - & 37.700GB & -\\
+    \hline
+    16 & 762 & 57.038GB & 106.534GB & 75.5967GB & 130.425GB
+  \end{tabular}
+  \caption{Mean memory consumption for number of processors}
+  \label{tab:memMean}
+\end{table}
+
+We now want to take a more detailed look into the memory consumption ratios. Figure \ref{fig:memRatiosVars} depicts the retio between the peak memory usage of MallobSAT and our algorithm for all our benchmark instances. We distinguished between solved and un- or partially solved instances and depicted the 75-percentile for the speedups of all instances combined.
+% TODO: might not have been the right family for the name. Check families
+In the top left corner of figure \ref{fig:memRatiosVars1node} we can see 6 instances with memory ratios over 29. The unsolved instances all belong to a family of instances called 'tseitin-formulas' encoding tseitin formulas. We want to use these instances as an example of an effect we observed on a few occations when comparing our algorithm to MallobSAT: Our Algorithm seems to be more memory efficient on some unsolved instances. This phenomenon can be explained by the general pattern of SAT-solvers to accumulate memory usage over their runtime. Since Gimsatul already sacrifices runtime efficiency for shared memory clause sharing, our algorithm might simply not be as far into solving a specific instance at the timeout than MallobSAT is. We therefore can not say that our algorithm is even more memory efficient in these scenarios, since by the time it solves the problem it will have accumulated more memory.
+The same cluster contains a solved instance. It consists of only 180 variables and 432 clauses. Since it is satisfiable and does not appear as an outlier in figures \ref{fig:memRatiosVars4node} and \ref{fig:memRatiosVars16node} we assume our algorithm luckily found a satisfiable assignment unusually fast and consider this a true outlier.
+% TODO? gibt 4 große Instanzen, für die gibts immer gute ratios:
+% hwmcc17miters-xits-iso-oski15a08b08s.sanitized.cnf
+% hwmcc17miters-xits-iso-oski15a08b00s.sanitized.cnf
+% hwmcc17miters-xits-iso-6s281b35.sanitized.cnf
+% hwmcc12miters-xits-iso-6s111.sanitized.cnf
+
+TODO: more outlier discussion in plots
 
 \begin{figure}
   \center
@@ -498,20 +552,25 @@ Figure \ref{fig:memCompare} shows the comparisons for the memory consumption bet
     \center
     \includegraphics[scale=.3]{plots/1node_compare/mem_ratio_over_vars.png}
     \caption{1 node}
+    \label{fig:memRatiosVars1node}
   \end{subfigure}
   \begin{subfigure}[c]{.4\textwidth}
     \center
     \includegraphics[scale=.3]{plots/4node_compare/mem_ratio_over_vars.png}
-    \caption{1 node}
+    \caption{4 node}
+    \label{fig:memRatiosVars4node}
   \end{subfigure}
   \begin{subfigure}[c]{.4\textwidth}
     \center
     \includegraphics[scale=.3]{plots/16node_compare/mem_ratio_over_vars.png}
-    \caption{1 node}
+    \caption{16 node}
+    \label{fig:memRatiosVars16node}
   \end{subfigure}
   \caption{Memory ratios over variables.}
   \label{fig:memRatiosVars}
 \end{figure}
+
+
 
 \begin{figure}
   \center
