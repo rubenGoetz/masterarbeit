@@ -111,6 +111,8 @@
 \def\algorithmautorefname{Algorithmus}
 \let\chapter=\section % repariert ein Problem mit algorithm2e
 
+\usepackage{longtable}
+
 \begin{document}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -293,7 +295,7 @@ In this section we want to discuss the findings of our experimental results of o
 TODO: SuperMUC citation? I didnt find anything...
 
 \subsection{Benchmarks}
-To evaluate our algorithm we used benchmark instances provided by Iser et al. on their Global Benchmark Database \cite{benchmarkDB}. Specifically we used the 400 instances contained in the track main\_2024 that was used in the 2024 SAT competition \cite{satCompetition}, containing a myriad of different problems encoded as SAT instances.
+To evaluate our algorithm we used benchmark instances provided by Iser et al. on their Global Benchmark Database \cite{benchmarkDB}. Specifically we used the 400 instances contained in the track main\_2024 that was used in the 2024 SAT competition \cite{satComp2024}, containing a myriad of different problems encoded as SAT instances.
 
 \subsection{Configuration}
 We ran our Algorithm with one gimsatul instance per node, i.e. 48 threads in one shared memory instance. Running multiple Gimsatul instances on the same node proved to yield comparable or worse results to only one instance per node with significant memory costs. Using the nodes capability of hyperthreading to exploit all 96 virtual threads was not supported by Mallob on the superMUC-NG cluster. We would not expected an increase in performance in this case regardles, since in all cases the configurations utilizing hall 96 virtual nodes performed worse that their counter parts with only the 48 hardware threads. Figure \ref{fig:1nodeConfigCompare} shows our results for all the thread configurations we tested on one node. To save on computing time, we reason that the best configuration for one node will also be the best for multiple nodes instead of testing them all on multiple nodes. To reinforce this argument we tried the best two configurations for one node on 2 compute nodes as shown in figure \ref{fig:2nodeConfigCompare}. In the following we will denote the two configurations as follows:
@@ -407,11 +409,17 @@ To calculate Speedups we ran the sate of the art serial SAT-solver Kissat for up
 %   software-verification: 2/15 alle unsat
 %   subgraph-isomorphism: 2/4   die beiden sat sind langsamer, die beiden unsat schneller
 
+Table \ref{tab:speedupsSignificantFamilies} shows speedups seperated by significant families. By this we mean families with at least 5 Instances contained in our benchmark set. A complete table over all instance families is given in the appendix \ref{app:speedupsFamiliesComplete}. We calculated the geometric mean speedups per family for all our configurations and ordered them by the geometric mean speedup over all 5 configurations.
+
 TODO: is "negative speedup" correct?
 
 For all instances of the family 'cryptography-simon' we found a negative speedup for all setups of our algorithm, which may suggest a systematic discompatibility between our approach and this kind of problem. All Instances of the family 'cryptography-simon' in our benchmark set however were solved in under $0.01s$ by Kissat. Since the fastest meassured runtime of our approach is $0.030417s$ for the instance 'simon-r24-1.sanitized' we attribute any slowdown for instances below $0.03s$ to our increased startup overhead in relation to Kissats serial startup.
 
-For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satCompetition} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}. We currently can not give a specific reason for this phenomenon, however Schreiber et al. \cite{searchOnlyPaper} also found the search only approach in MallobSAT to be non-beneficial on this family of instances. We therefore conclude that some inprocessing techniques applied by Kissat make huge improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance our approach seems to be unsuitable for the 'heule-folkman' family.
+For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satComp2024} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}. We currently can not give a specific reason for this phenomenon, however Schreiber et al. \cite{searchOnlyPaper} also found the search only approach in MallobSAT to be non-beneficial on this family of instances. We therefore conclude that some inprocessing techniques applied by Kissat make huge improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance our approach seems to be unsuitable for the 'heule-folkman' family.
+
+TODO: what's up with rbsat? I cant find any info about the family...
+
+Instances of the family 'minimum-disagreement-parity' \cite{satComp2022} encode the minimum disagreement parity problem, which is of interest to the cryptography community and results in challenging SAT problems. This is underlined by the small size of these instances: The biggest one contains only 1021 Variables, with the one that was solved slowest by Kissat (2617.82s) only containing 750 Variables. The family is comprised of 3 satisfiable and 3 unsatisfiable instances. Our high geometric mean speedups of over 29 suggest, the MDP problem instances profit from the increased processing power of parallel sat solving way more than other kinds of problems.
 
 \begin{table}
   \center
@@ -432,6 +440,36 @@ For instances of the family 'heule-folkman', which encode proofs whether a graph
   \end{tabular}
   \caption{Number of instances solved out of the 10 instances from the Family 'heule-folkman'.}
   \label{tab:heuleFolkman}
+\end{table}
+
+\begin{table}
+  \center
+  \begin{tabular}{ c|c|c|c|c|c|c|c }
+    family	&	\#	&	1node	&	2node	&	4node	&	8node	&	16node	&	geometric mean\\
+    \hline
+    %coloring	&	8	&	-1.0	&	-1.0	&	-1.0	&	-1.0	&	-1.0	&	-1.0\\
+    cryptography-simon	&	10	&	0.219	&	0.202	&	0.201	&	0.292	&	0.228	&	0.226\\
+    heule-folkman	&	11	&	0.486	&	0.43	&	0.467	&	0.519	&	0.427	&	0.465\\
+    miter	&	47	&	1.738	&	1.755	&	1.823	&	1.944	&	1.998	&	1.849\\
+    random-circuits	&	15	&	3.176	&	3.201	&	3.142	&	3.439	&	2.996	&	3.188\\
+    planning	&	6	&	2.573	&	3.069	&	2.182	&	4.431	&	4.779	&	3.254\\
+    software-verification	&	15	&	2.253	&	3.525	&	4.873	&	4.831	&	4.355	&	3.821\\
+    tseitin-formulas	&	8	&	4.768	&	4.857	&	5.087	&	5.356	&	5.416	&	5.09\\
+    hardware-verification	&	5	&	4.608	&	5.503	&	5.616	&	5.816	&	5.726	&	5.435\\
+    scheduling	&	50	&	4.964	&	7.243	&	7.922	&	8.446	&	9.259	&	7.405\\
+    heule-nol	&	11	&	5.896	&	7.09	&	6.036	&	9.561	&	12.123	&	7.82\\
+    cryptography-ascon	&	6	&	7.502	&	9.013	&	9.829	&	10.895	&	12.363	&	9.781\\
+    quantum-kochen-specker	&	10	&	9.283	&	10.743	&	10.469	&	10.917	&	10.954	&	10.454\\
+    maxsat-optimum	&	13	&	7.797	&	11.306	&	11.407	&	13.962	&	15.845	&	11.734\\
+    argumentation	&	21	&	12.448	&	16.472	&	17.132	&	19.12	&	20.399	&	16.879\\
+    hamiltonian	&	40	&	9.402	&	15.061	&	18.36	&	21.842	&	30.853	&	17.73\\
+    cryptography	&	7	&	6.98	&	15.289	&	19.646	&	26.816	&	31.87	&	17.81\\
+    independent-set	&	15	&	17.084	&	19.857	&	21.196	&	23.342	&	24.077	&	20.956\\
+    minimum-disagreement-parity	&	17	&	32.697	&	31.982	&	29.057	&	37.168	&	49.981	&	35.508\\
+    rbsat	&	5	&	49.344	&	43.944	&	57.652	&	191.928	&	126.86	&	78.828\\
+  \end{tabular}
+  \caption{Speedups per family and Solver Setup for families with at least 5 instances in our benchmark set and a calculatable speedup. Sorted in ascending order of geometric mean speedup.}
+  \label{tab:speedupsSignificantFamilies}
 \end{table}
 
 \subsubsection{Comparison to MallobSAT}
@@ -534,7 +572,8 @@ The exact memory consumption of our algorithm as well as MallobSAT is shown in f
   \label{tab:memMean}
 \end{table}
 
-We now want to take a more detailed look into the memory consumption ratios. Figure \ref{fig:memRatiosVars} depicts the retio between the peak memory usage of MallobSAT and our algorithm for all our benchmark instances. We distinguished between solved and un- or partially solved instances and depicted the 75-percentile for the speedups of all instances combined.
+\label{sec:peakMemRatios}
+We now want to take a more detailed look into the memory consumption ratios. Figure \ref{fig:memRatiosVars} depicts the retio between the peak memory usage of MallobSAT and our algorithm for all our benchmark instances. We distinguished between solved and un- or partially solved instances and depicted the 75-percentile for the speedups of all instances combined with a dashed line. The exact values of these 75-percentiles for all subplots are shown in table \ref{tab:memRatioPercentiles} The plots all mark the critical memory ratio of 1 with a drawn through black line.
 % TODO: might not have been the right family for the name. Check families
 In the top left corner of figure \ref{fig:memRatiosVars1node} we can see 6 instances with memory ratios over 29. The unsolved instances all belong to a family of instances called 'tseitin-formulas' encoding tseitin formulas. We want to use these instances as an example of an effect we observed on a few occations when comparing our algorithm to MallobSAT: Our Algorithm seems to be more memory efficient on some unsolved instances. This phenomenon can be explained by the general pattern of SAT-solvers to accumulate memory usage over their runtime. Since Gimsatul already sacrifices runtime efficiency for shared memory clause sharing, our algorithm might simply not be as far into solving a specific instance at the timeout than MallobSAT is. We therefore can not say that our algorithm is even more memory efficient in these scenarios, since by the time it solves the problem it will have accumulated more memory.
 The same cluster contains a solved instance. It consists of only 180 variables and 432 clauses. Since it is satisfiable and does not appear as an outlier in figures \ref{fig:memRatiosVars4node} and \ref{fig:memRatiosVars16node} we assume our algorithm luckily found a satisfiable assignment unusually fast and consider this a true outlier.
@@ -570,7 +609,32 @@ TODO: more outlier discussion in plots
   \label{fig:memRatiosVars}
 \end{figure}
 
+% 1node 75-percentile for all memory ratios: 3.9035953177257525
+% 1node Geometric mean of geometric means: 0.2826566387020432
 
+% 4node 75-percentile for all memory ratios: 4.376587301587302
+% 4node Geometric mean of geometric means: 0.25621625192024783
+
+% 16node 75-percentile for all memory ratios: 4.820217834212041
+% 16node Geometric mean of geometric means: 0.21154183679147623
+
+\begin{table}
+  \center
+  \begin{tabular}{ c|c|c }
+    \#nodes & \#processors & 75-percentile \\
+    \hline
+    1  & 48  & 3.904\\
+    \hline
+    4  & 192 & 4.377\\
+    \hline
+    16 & 762 & 4.820
+  \end{tabular}
+  \caption{Exact values of the 75-percentile for the ratios of peak memory consumption between MallobSAT and our algorithm as described in section \ref{sec:peakMemRatios}}
+  \label{tab:memRatioPercentiles}
+\end{table}
+
+\label{sec:GMs}
+Up to this point we only ever discussed peak memory consumption. We now want to take a closer look at the relative memory consumption of our algorithm during the course of calculation. To give an overview we calculated the relative memory consumption of our algorithm to MallobSAT for each second, that both solvers were active. E.g. if MallobSAT finished its execution after 30s and our algorithm finished after 35s we calculated the ratio between MallobSAT's memomry consumption and our algorithms memory consumption for every second of the first 30 seconds to compare their memory consumption during runtime only. Figure \ref{fig:memGmVars} shows the geometric means over these calculatedratios for each benchmark instance over the instance size by variable count. We marked the critical ratito of 1 with a dashed line and the geometric mean over all data points in a plot with a drawn through black line. The exact geometric means for each subplot are given in table \ref{tab:memGM}.
 
 \begin{figure}
   \center
@@ -592,6 +656,25 @@ TODO: more outlier discussion in plots
   \caption{geometric means for memory ratios over variables.}
   \label{fig:memGmVars}
 \end{figure}
+
+\begin{table}
+  \center
+  \begin{tabular}{ c|c|c }
+    \#nodes & \#processors & Geometric Mean \\
+    \hline
+    1  & 48  & 0.283\\
+    \hline
+    4  & 192 & 0.256\\
+    \hline
+    16 & 762 & 0.212
+  \end{tabular}
+  \caption{Geometric Means of the geometric mean memory consumption per second as described in section \ref{sec:GMs}}
+  \label{tab:memGM}
+\end{table}
+
+Figure \ref{fig:memRatiosSecs} shows the ratios between MallobSAT and our algorithm per second for all benchmark instances that ran into our timeout of 300s. We smoothed the lines by plotting the geometric means over a sliding window of 5 seconds for each instance. 
+The first obvious observation would be, that for almost all instances the lines stay below a ratio of 1, indicating a systematic reduction in memory consumption for our approach in comparison to MallobSAT.
+Our second interesting observation are the extreme jitters in some of our lines in the first few seconds of execution. We can explain these with a fairly simple effect of the search only setting of Mallob: At the start of the execution Mallob starts a preprocessing thread in addition to the regular solving threads. This thread solely executes the preprocessing techniques implemented in Kissat. After the preprocessing is finnished the solver threads already running on the unprocessed instance are slowly replaced by threads solving the preprocessed version of the problem formula. Since we get a memory status every second from Mallob we might get meassurements while a thread is beeing restarted a second offset for one of the two compared solvers, resulting in an extremely reduced memory consumption at this point in time and thus resulting in extreme jitters in our plots.
 
 \begin{figure}
   \center
@@ -652,6 +735,82 @@ TODO: write a (hopefully short) paragraph about what we didn't have time for any
 \clearpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Appendix}
+
+\subsection{Speedups per Family and Setup}
+\label{app:speedupsFamiliesComplete}
+\begin{longtable}{ l|c|c|c|c|c|c|c }
+    family	&	\#	&	1node	&	2node	&	4node	&	8node	&	16node	&	gm speedup\\
+    \hline
+    subset-cardinality	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    hgen	&	1	&	-	&	-	&	59.623	&	130.885	&	1336.012	&	-\\
+    binary-pigeon-hole	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    binary-tree-parity	&	2	&	-	&	-	&	-	&	-	&	-	&	-\\
+    coloring	&	8	&	-	&	-	&	-	&	-	&	-	&	-\\
+    clique-width	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    hamiltonian-cycle	&	1	&	-	&	-	&	7.99	&	8.607	&	9.199	&	-\\
+    sgen	&	2	&	-	&	-	&	-	&	-	&	-	&	-\\
+    risc-instruction-removal-subrv	&	2	&	-	&	-	&	-	&	-	&	-	&	-\\
+    hypertree-decomposition	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    fermat	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    hardware-model-checking	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    knights-problem	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    waerden	&	1	&	-	&	-	&	-	&	-	&	-	&	-\\
+    cril-misc	&	2	&	-	&	2.353	&	2.95	&	2.595	&	2.822	&	-\\
+    relativized-pigeon-hole	&	2	&	-	&	-	&	-	&	-	&	-	&	-\\
+    cryptography-simon	&	10	&	0.219	&	0.202	&	0.201	&	0.292	&	0.228	&	0.226\\
+    heule-folkman	&	11	&	0.486	&	0.43	&	0.467	&	0.519	&	0.427	&	0.465\\
+    subgraph-isomorphism	&	4	&	1.219	&	1.578	&	1.601	&	2.012	&	1.891	&	1.636\\
+    puzzle	&	1	&	1.581	&	1.58	&	1.787	&	1.837	&	1.908	&	1.734\\
+    miter	&	47	&	1.738	&	1.755	&	1.823	&	1.944	&	1.998	&	1.849\\
+    st-connectivity-principle	&	2	&	2.651	&	2.027	&	2.504	&	2.74	&	2.68	&	2.506\\
+    random-circuits	&	15	&	3.176	&	3.201	&	3.142	&	3.439	&	2.996	&	3.188\\
+    automata-synchronization	&	1	&	2.694	&	3.297	&	3.425	&	3.326	&	3.4	&	3.216\\
+    planning	&	6	&	2.573	&	3.069	&	2.182	&	4.431	&	4.779	&	3.254\\
+    clique-formulas	&	1	&	3.452	&	3.743	&	3.75	&	3.54	&	3.767	&	3.648\\
+    graph-isomorphism	&	1	&	3.292	&	3.727	&	3.558	&	3.642	&	4.085	&	3.652\\
+    software-verification	&	15	&	2.253	&	3.525	&	4.873	&	4.831	&	4.355	&	3.821\\
+    random-modularity	&	1	&	2.233	&	2.41	&	4.763	&	4.568	&	6.982	&	3.824\\
+    cellular-automata	&	2	&	3.082	&	3.713	&	4.152	&	4.032	&	4.494	&	3.864\\
+    bitvector	&	4	&	3.103	&	3.621	&	4.209	&	4.318	&	4.256	&	3.871\\
+    stedman-triples	&	2	&	2.1	&	2.508	&	3.812	&	7.499	&	8.59	&	4.191\\
+    erdos-discrepancy	&	1	&	2.216	&	5.008	&	4.424	&	6.39	&	7.165	&	4.681\\
+    tseitin-formulas	&	8	&	4.768	&	4.857	&	5.087	&	5.356	&	5.416	&	5.09\\
+    hardware-verification	&	5	&	4.608	&	5.503	&	5.616	&	5.816	&	5.726	&	5.435\\
+    summle	&	3	&	2.857	&	6.792	&	4.843	&	6.344	&	8.389	&	5.493\\
+    equivalence-chain-principle	&	4	&	4.899	&	5.982	&	6.331	&	6.466	&	7.245	&	6.135\\
+    or\_randxor	&	1	&	5.818	&	5.787	&	7.144	&	7.039	&	7.28	&	6.579\\
+    mutilated-chessboard	&	3	&	7.906	&	4.72	&	7.156	&	7.134	&	7.757	&	6.822\\
+    scheduling	&	50	&	4.964	&	7.243	&	7.922	&	8.446	&	9.259	&	7.405\\
+    rooks	&	3	&	7.324	&	8.081	&	9.091	&	6.64	&	7.402	&	7.664\\
+    heule-nol	&	11	&	5.896	&	7.09	&	6.036	&	9.561	&	12.123	&	7.82\\
+    quasigroup-completion	&	2	&	5.18	&	6.207	&	6.729	&	16.834	&	13.872	&	8.724\\
+    grs-fp-comm	&	2	&	7.171	&	8.423	&	9.126	&	9.716	&	10.254	&	8.87\\
+    cryptography-ascon	&	6	&	7.502	&	9.013	&	9.829	&	10.895	&	12.363	&	9.781\\
+    popularity-similarity	&	1	&	10.449	&	10.079	&	9.65	&	10.861	&	10.935	&	10.383\\
+    quantum-kochen-specker	&	10	&	9.283	&	10.743	&	10.469	&	10.917	&	10.954	&	10.454\\
+    maxsat-optimum	&	13	&	7.797	&	11.306	&	11.407	&	13.962	&	15.845	&	11.734\\
+    reg-n	&	4	&	0.545	&	27.772	&	28.21	&	26.609	&	27.9	&	12.595\\
+    argumentation	&	21	&	12.448	&	16.472	&	17.132	&	19.12	&	20.399	&	16.879\\
+    ramsey	&	1	&	12.11	&	19.653	&	17.338	&	18.754	&	19.133	&	17.143\\
+    hamiltonian	&	40	&	9.402	&	15.061	&	18.36	&	21.842	&	30.853	&	17.73\\
+    cryptography	&	7	&	6.98	&	15.289	&	19.646	&	26.816	&	31.87	&	17.81\\
+    independent-set	&	15	&	17.084	&	19.857	&	21.196	&	23.342	&	24.077	&	20.956\\
+    pythagorean-triples	&	1	&	9.899	&	20.955	&	19.668	&	23.807	&	55.926	&	22.233\\
+    polynomial-multiplication	&	4	&	21.641	&	34.111	&	22.052	&	26.627	&	30.362	&	26.537\\
+    minimum-disagreement-parity	&	17	&	32.697	&	31.982	&	29.057	&	37.168	&	49.981	&	35.508\\
+    battleship	&	1	&	10.065	&	55.764	&	19.901	&	195.628	&	96.745	&	46.241\\
+    unknown	&	1	&	24.193	&	53.217	&	40.007	&	71.647	&	70.288	&	48.172\\
+    crafted-cec	&	1	&	22.625	&	21.583	&	128.892	&	29.699	&	197.845	&	51.713\\
+    circuit-multiplier	&	1	&	51.034	&	25.529	&	68.564	&	78.517	&	62.533	&	53.507\\
+    random-csp	&	2	&	19.592	&	76.009	&	32.096	&	93.696	&	106.327	&	54.394\\
+    rbsat	&	5	&	49.344	&	43.944	&	57.652	&	191.928	&	126.86	&	78.828\\
+    influence-maximization	&	1	&	42.347	&	200.995	&	49.984	&	164.3	&	164.761	&	102.865\\
+    tree-decomposition	&	1	&	542.903	&	21.518	&	85.753	&	383.915	&	388.399	&	171.734\\
+  \caption{Speedups per family and Solver Setup}
+  \label{tab:speedupsFamiliesComplete}
+\end{longtable}
 
 \bibliographystyle{eptcs}
 \bibliography{literatur}
