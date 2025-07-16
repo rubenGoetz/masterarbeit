@@ -248,7 +248,7 @@ TODO: write some introduction into parallel sat solving in general
 
 \subsection{Motivation}
 
-Memory in Cloud applications can be expensive or highly limited on slim processing nodes. We thus want to try to limit memory consumption by combining gimsatul -- a shared memory clause sharing satsolver -- with the hyper parallel sat-solver MallobSAT.\\
+Memory in Cloud applications can be expensive or highly limited on slim processing nodes. We thus want to try to limit memory consumption by combining gimsatul -- a shared memory clause sharing satsolver -- with the hyper parallel sat-solver MallobSat.\\
 
 TODO: make motivation a meaningfull paragraph
 
@@ -283,7 +283,35 @@ TODO: talk about approaches that have been taken to reduce memory demand in para
 
 \section{The Algorithm}
 
-TODO: Discuss gimsatul \cite{gimsatul}, MallobSAT \cite{dominikPhd} and the Architecture used to combine the two.
+In this section we want to introduce MallobSat and Gimsatul, the core building blocks of our work. We integrated Gimsatul into MallobSat as a Solver backend to utilize both Gimsatul's memory efficiency, achieved by shared memory clause sharing, and MallobSat's hyper parallel scalability. We also want to describe the architecture we used to make it possible to use the already parallel SAT-solver Gimsatul as a solver backend in MallobSat.
+
+\subsection{MallobSat}
+
+
+
+\subsection{Gimsatul}
+
+Gimsatul \cite{gimsatul} is a paralell portfolio SAT-solver that aims to reduce its memory consumption and enable agressive clause sharing by using a shared memory approach for its clauses. The solver engines are CDCL solvers. In the world of Gimsatul these solver threads are called rings. There also exists a ruler thread, handeling initialisation and synchonisation of its rings. We will adopt this naming pattern from here on out when talking about Gimsatul's inner workings.
+
+Gimsatul achieves its shared memory approach for clauses by only sharing pointers to newly derived clauses instead of whole clause themselfs. To make this possible Fleury and Biere revisit the classical watcher data structures, resulting in all rings sharing their clauses in memory but maintaining their own watcher data structures independently. Further details are given in the original paper \cite{gimsatul}.
+
+We do want to recap Gimsatul's clausesharing mechnanisms more closely however, since this will become importatnt later on. If a ring derives a clause it deems worthy to share (i.e. a clause with a low glucose level) it will store a reference to this clause inside a buffer of small constant size for each other ring. If a buffer is full it will throw out the clause with the highest glucose level in the buffer. When a ring decides to import a clause it will pick another ring at random and import the clause with the lowest glucose level in it's respective buffer.
+
+TODO: adapt Gimsatuls clause sharing graphic
+
+To diversify the rings Gimsatul utilizes differing initialisations for the first random walks of each ring. Each ring can start this procedure with either all phases set to 1 or all phases set to 0. Again more detail is given in the original paper \cite{gimsatul}.
+
+\subsection{Architecture}
+
+\begin{figure}
+  \center
+  \includegraphics[scale=.2]{figures/architektur.png}
+  \caption{Architecture}
+  \label{fig:architecture}
+\end{figure}
+
+
+% Nicht vergessen: die zusätzliche diversifizierung in Gimsatul
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -331,11 +359,11 @@ In our experiments configuartion $B$ solved 10 benchmark instances, that configu
   \label{fig:2nodeConfigCompare}
 \end{figure}
 
-To further configure MallobSAT's options we implemented a search only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e. no simplifying or probing. To preprocess the formula we utilized the Kissat SAT-solver \cite{kissat}. We found a significant increase in performance due to this practice. (TODO: give a figure? This experiment was only run on the institute servers...)
+To further configure MallobSat's options we implemented a search only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e. no simplifying or probing. For Gimsatul this has the additional effect of avoiding the synchronization between all rings of a Gimsatul instance. This increases memory consumption due to missing compacting procedures but avoids idleing rings while waiting for other rings to synchonize. To preprocess the formula we utilized the Kissat SAT-solver \cite{kissat}. We found a significant increase in performance due to this practice. (TODO: give a figure? This experiment was only run on the institute servers...)
 
 \subsection{Runtime and Memory Usage}
 
-We first want to discuss our findings on runtime regarding the scalability on up to 16 nodes (i.e. 768 processors). We then compare our Algorithm to the state of the art distributed SAT-solver MallobSAT with its default configuration utilizing one Kissat instance per processor.
+We first want to discuss our findings on runtime regarding the scalability on up to 16 nodes (i.e. 768 processors). We then compare our Algorithm to the state of the art distributed SAT-solver MallobSat with its default configuration utilizing one Kissat instance per processor.
 
 \subsubsection{Speedups}
 
@@ -353,7 +381,7 @@ As shown in figure \ref{fig:runtimeCompareGim} we ran our algorithm on 1, 2, 4, 
   \begin{subfigure}[c]{\textwidth}
     \center
     \includegraphics{plots/cumulative_runtime/scalability_kis.png}
-    \subcaption{Scalability MallobSAT}
+    \subcaption{Scalability MallobSat}
     \label{fig:runtimeCompareKis}
   \end{subfigure}
   \caption{Some Example plot on scalability}
@@ -374,7 +402,7 @@ To calculate Speedups we ran the sate of the art serial SAT-solver Kissat for up
   \begin{tabular}{ c|c|c|c }
     \multicolumn{2}{c|}{Setup} & \multicolumn{2}{c}{Solver}\\
     \hline
-    \#nodes   & \#processors   & Our Algorithm  & MallobSAT \\
+    \#nodes   & \#processors   & Our Algorithm  & MallobSat \\
     \hline
     1  & 48  & 5.389  & 7.847\\
     \hline
@@ -415,7 +443,7 @@ TODO: is "negative speedup" correct?
 
 For all instances of the family 'cryptography-simon' we found a negative speedup for all setups of our algorithm, which may suggest a systematic discompatibility between our approach and this kind of problem. All Instances of the family 'cryptography-simon' in our benchmark set however were solved in under $0.01s$ by Kissat. Since the fastest meassured runtime of our approach is $0.030417s$ for the instance 'simon-r24-1.sanitized' we attribute any slowdown for instances below $0.03s$ to our increased startup overhead in relation to Kissats serial startup.
 
-For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satComp2024} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}. We currently can not give a specific reason for this phenomenon, however Schreiber et al. \cite{searchOnlyPaper} also found the search only approach in MallobSAT to be non-beneficial on this family of instances. We therefore conclude that some inprocessing techniques applied by Kissat make huge improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance our approach seems to be unsuitable for the 'heule-folkman' family.
+For instances of the family 'heule-folkman', which encode proofs whether a graph is a so called Folkman Graph \cite{satComp2024} we find serial Kissat to perform generally better than our approach. In our experiments Kissat solved all $10$ instances of this family in our benchmark set while our approach only solved at most $3$ as shown in table \ref{tab:heuleFolkman}. We currently can not give a specific reason for this phenomenon, however Schreiber et al. \cite{searchOnlyPaper} also found the search only approach in MallobSat to be non-beneficial on this family of instances. We therefore conclude that some inprocessing techniques applied by Kissat make huge improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance our approach seems to be unsuitable for the 'heule-folkman' family.
 
 TODO: what's up with rbsat? I cant find any info about the family...
 
@@ -472,7 +500,7 @@ Instances of the family 'minimum-disagreement-parity' \cite{satComp2022} encode 
   \label{tab:speedupsSignificantFamilies}
 \end{table}
 
-\subsubsection{Comparison to MallobSAT}
+\subsubsection{Comparison to MallobSat}
 
 In the following we denote benchmark instances that have been solved by all solvers present in a given context to be solved instances. We complementairy denote instances that have not been solved by at least one of the solvers in a given context as un- or partially solved instances.
 
@@ -498,11 +526,11 @@ Figure \ref{fig:runtimeCompare} shows the comparisons between the runtimes for M
     \subcaption{16 node}
     \label{fig:runtimeCompare16node}
   \end{subfigure}
-  \caption{Runtime Comparison between MallobSAT and our algorithm}
+  \caption{Runtime Comparison between MallobSat and our algorithm}
   \label{fig:runtimeCompare}
 \end{figure}
 
-Figure \ref{fig:memCompare} shows the comparisons for the memory consumption between our approach and MallobSAT in a similar manner, with MallobSAT's peak memory consumption on the x-axis and the peak memory consumption of our algorithm on the y-axis. Again we differentiated into satisfiable and unsatisfiable instances. Here we can clearly see our approach consuming less memory in almost all cases.
+Figure \ref{fig:memCompare} shows the comparisons for the memory consumption between our approach and MallobSat in a similar manner, with MallobSat's peak memory consumption on the x-axis and the peak memory consumption of our algorithm on the y-axis. Again we differentiated into satisfiable and unsatisfiable instances. Here we can clearly see our approach consuming less memory in almost all cases.
 
 \begin{figure}
   \center
@@ -524,11 +552,11 @@ Figure \ref{fig:memCompare} shows the comparisons for the memory consumption bet
     \subcaption{16 node}
     \label{fig:memCompare16node}
   \end{subfigure}
-  \caption{Memory Comparison between MallobSAT and our algorithm}
+  \caption{Memory Comparison between MallobSat and our algorithm}
   \label{fig:memCompare}
 \end{figure}
 
-The exact memory consumption of our algorithm as well as MallobSAT is shown in figure \ref{fig:memAbsVars}. The mean memory Consuptions over all instances are shown in table \ref{tab:memMean}. For solved instances we find th ratio between MallobSAT's mean memory consumption and the memory consumption of our algorithm to be $1.872$ for 1 node, $1.827$ for 4 nodes and $1.868$ for 16 nodes. For all instances we find the ratios to be a little smaller, with $1.897$ for 1 node, $1.66$ for 4 nodes and $1.725$ for 16 nodes.
+The exact memory consumption of our algorithm as well as MallobSat is shown in figure \ref{fig:memAbsVars}. The mean memory Consuptions over all instances are shown in table \ref{tab:memMean}. For solved instances we find th ratio between MallobSat's mean memory consumption and the memory consumption of our algorithm to be $1.872$ for 1 node, $1.827$ for 4 nodes and $1.868$ for 16 nodes. For all instances we find the ratios to be a little smaller, with $1.897$ for 1 node, $1.66$ for 4 nodes and $1.725$ for 16 nodes.
 
 \begin{figure}
   \center
@@ -556,7 +584,7 @@ The exact memory consumption of our algorithm as well as MallobSAT is shown in f
   \begin{tabular}{ c|c|c|c|c|c }
     \multicolumn{2}{c|}{} & \multicolumn{2}{c|}{Solved Instances} & \multicolumn{2}{c}{All Instances}\\
     \hline
-    \#nodes & \#processors & Our Algorithm & MallobSAT & Our Algorithm & MallobSAT \\
+    \#nodes & \#processors & Our Algorithm & MallobSat & Our Algorithm & MallobSat \\
     \hline
     1  & 48  & 3.672GB & 6.875GB & 4.477GB & 8.494GB\\
     \hline
@@ -573,9 +601,9 @@ The exact memory consumption of our algorithm as well as MallobSAT is shown in f
 \end{table}
 
 \label{sec:peakMemRatios}
-We now want to take a more detailed look into the memory consumption ratios. Figure \ref{fig:memRatiosVars} depicts the retio between the peak memory usage of MallobSAT and our algorithm for all our benchmark instances. We distinguished between solved and un- or partially solved instances and depicted the 75-percentile for the speedups of all instances combined with a dashed line. The exact values of these 75-percentiles for all subplots are shown in table \ref{tab:memRatioPercentiles} The plots all mark the critical memory ratio of 1 with a drawn through black line.
+We now want to take a more detailed look into the memory consumption ratios. Figure \ref{fig:memRatiosVars} depicts the retio between the peak memory usage of MallobSat and our algorithm for all our benchmark instances. We distinguished between solved and un- or partially solved instances and depicted the 75-percentile for the speedups of all instances combined with a dashed line. The exact values of these 75-percentiles for all subplots are shown in table \ref{tab:memRatioPercentiles} The plots all mark the critical memory ratio of 1 with a drawn through black line.
 % TODO: might not have been the right family for the name. Check families
-In the top left corner of figure \ref{fig:memRatiosVars1node} we can see 6 instances with memory ratios over 29. The unsolved instances all belong to a family of instances called 'tseitin-formulas' encoding tseitin formulas. We want to use these instances as an example of an effect we observed on a few occations when comparing our algorithm to MallobSAT: Our Algorithm seems to be more memory efficient on some unsolved instances. This phenomenon can be explained by the general pattern of SAT-solvers to accumulate memory usage over their runtime. Since Gimsatul already sacrifices runtime efficiency for shared memory clause sharing, our algorithm might simply not be as far into solving a specific instance at the timeout than MallobSAT is. We therefore can not say that our algorithm is even more memory efficient in these scenarios, since by the time it solves the problem it will have accumulated more memory.
+In the top left corner of figure \ref{fig:memRatiosVars1node} we can see 6 instances with memory ratios over 29. The unsolved instances all belong to a family of instances called 'tseitin-formulas' encoding tseitin formulas. We want to use these instances as an example of an effect we observed on a few occations when comparing our algorithm to MallobSat: Our Algorithm seems to be more memory efficient on some unsolved instances. This phenomenon can be explained by the general pattern of SAT-solvers to accumulate memory usage over their runtime. Since Gimsatul already sacrifices runtime efficiency for shared memory clause sharing, our algorithm might simply not be as far into solving a specific instance at the timeout than MallobSat is. We therefore can not say that our algorithm is even more memory efficient in these scenarios, since by the time it solves the problem it will have accumulated more memory.
 The same cluster contains a solved instance. It consists of only 180 variables and 432 clauses. Since it is satisfiable and does not appear as an outlier in figures \ref{fig:memRatiosVars4node} and \ref{fig:memRatiosVars16node} we assume our algorithm luckily found a satisfiable assignment unusually fast and consider this a true outlier.
 % TODO? gibt 4 große Instanzen, für die gibts immer gute ratios:
 % hwmcc17miters-xits-iso-oski15a08b08s.sanitized.cnf
@@ -629,12 +657,12 @@ TODO: more outlier discussion in plots
     \hline
     16 & 762 & 4.820
   \end{tabular}
-  \caption{Exact values of the 75-percentile for the ratios of peak memory consumption between MallobSAT and our algorithm as described in section \ref{sec:peakMemRatios}}
+  \caption{Exact values of the 75-percentile for the ratios of peak memory consumption between MallobSat and our algorithm as described in section \ref{sec:peakMemRatios}}
   \label{tab:memRatioPercentiles}
 \end{table}
 
 \label{sec:GMs}
-Up to this point we only ever discussed peak memory consumption. We now want to take a closer look at the relative memory consumption of our algorithm during the course of calculation. To give an overview we calculated the relative memory consumption of our algorithm to MallobSAT for each second, that both solvers were active. E.g. if MallobSAT finished its execution after 30s and our algorithm finished after 35s we calculated the ratio between MallobSAT's memomry consumption and our algorithms memory consumption for every second of the first 30 seconds to compare their memory consumption during runtime only. Figure \ref{fig:memGmVars} shows the geometric means over these calculatedratios for each benchmark instance over the instance size by variable count. We marked the critical ratito of 1 with a dashed line and the geometric mean over all data points in a plot with a drawn through black line. The exact geometric means for each subplot are given in table \ref{tab:memGM}.
+Up to this point we only ever discussed peak memory consumption. We now want to take a closer look at the relative memory consumption of our algorithm during the course of calculation. To give an overview we calculated the relative memory consumption of our algorithm to MallobSat for each second, that both solvers were active. E.g. if MallobSat finished its execution after 30s and our algorithm finished after 35s we calculated the ratio between MallobSat's memomry consumption and our algorithms memory consumption for every second of the first 30 seconds to compare their memory consumption during runtime only. Figure \ref{fig:memGmVars} shows the geometric means over these calculatedratios for each benchmark instance over the instance size by variable count. We marked the critical ratito of 1 with a dashed line and the geometric mean over all data points in a plot with a drawn through black line. The exact geometric means for each subplot are given in table \ref{tab:memGM}.
 
 \begin{figure}
   \center
@@ -672,8 +700,8 @@ Up to this point we only ever discussed peak memory consumption. We now want to 
   \label{tab:memGM}
 \end{table}
 
-Figure \ref{fig:memRatiosSecs} shows the ratios between MallobSAT and our algorithm per second for all benchmark instances that ran into our timeout of 300s. We smoothed the lines by plotting the geometric means over a sliding window of 5 seconds for each instance. 
-The first obvious observation would be, that for almost all instances the lines stay below a ratio of 1, indicating a systematic reduction in memory consumption for our approach in comparison to MallobSAT.
+Figure \ref{fig:memRatiosSecs} shows the ratios between MallobSat and our algorithm per second for all benchmark instances that ran into our timeout of 300s. We smoothed the lines by plotting the geometric means over a sliding window of 5 seconds for each instance. 
+The first obvious observation would be, that for almost all instances the lines stay below a ratio of 1, indicating a systematic reduction in memory consumption for our approach in comparison to MallobSat.
 Our second interesting observation are the extreme jitters in some of our lines in the first few seconds of execution. We can explain these with a fairly simple effect of the search only setting of Mallob: At the start of the execution Mallob starts a preprocessing thread in addition to the regular solving threads. This thread solely executes the preprocessing techniques implemented in Kissat. After the preprocessing is finnished the solver threads already running on the unprocessed instance are slowly replaced by threads solving the preprocessed version of the problem formula. Since we get a memory status every second from Mallob we might get meassurements while a thread is beeing restarted a second offset for one of the two compared solvers, resulting in an extremely reduced memory consumption at this point in time and thus resulting in extreme jitters in our plots.
 
 \begin{figure}
