@@ -298,7 +298,7 @@ On an abstract view MallobSat combines existing serial SAT-solvers into a massiv
 
 TODO: adapt Mallob Engine graphic
 
-MallobSat equips each process with a fixed size import buffer for each of the processes solver engines and a single fixed size export buffer that is shared between all solver engines in a process. The processes are organized into a distributed binary tree to enable clause sharing for distributed systems. The exchange of clauses between processes happens periodically. In the world of MallobSat the times between these so caMallobSat. lled 'collective sharing operations' are called epochs.
+MallobSat equips each process with a fixed size import buffer for each of the processes solver engines and a single fixed size export buffer that is shared between all solver engines in a process. The processes are organized into a distributed binary tree to enable clause sharing for distributed systems. The exchange of clauses between processes happens periodically. In the world of MallobSat the times between these so called 'collective sharing operations' are called epochs.
 %An epoch $e \geq 0$ starts with the sharing operation $e$, i.e. the first epoch $e = 0$ starts with the beginning of solving, the second epoch $e = 1$ beginns with the first sharing operation and so on.
 At the beginning of each epoch (besides the first one) a collective sharing operation is executed: Each process is combining its own export buffer with the ones of its children, filtering duplicate clauses along the way. This process is executed from the leafs up to the root of the binary communication tree. If the merged export buffer exeeds its limit, clauses are discarded by their priority. MallobSat prioritizes clauses first by length, then by their lbd value and finally lexicographically as a tie breaker. If the root process has recieved the merged export buffers, the resulting collection of clauses is then broadcast down the binary tree.
 
@@ -322,17 +322,34 @@ To diversify the rings Gimsatul utilizes differing initialisations for the first
 
 We now want to describe the architectue of our algorithm, integrating Gimsatul (and with it its memory efficient shared memory approach) as a solver engine into MallobSat.
 
+The most intuitive approach to integrate Gimsatul into MallobSat would be to consider each ring in a Gimsatul instance as a solver engine in MallobSat, complying with MallobSat's paradigm of each solver engine beeing an independent serial SAT-solver. This approach runs into some fundamental problems however: 
+First off, Gimsatul is initialized by reading the original CNF Formula of a given Problem, running some preprocessing, initializing a single ring and then cloning said ring $t - 1$ times to create its $t$ solving threads (i.e. rings). If we integrated each ring to be a solver engine in MallobSat we would have to reimplement all of Gimsatuls initialisation to create each ring independently. This would make it unfeasible to keep Gimsatuls shared memory Clauses.
+Even more problematic would be MallobSat's malleability though. MallobSat is able to handle a fluctuating number of solver engines. If necessary it will make use of its malleability and stop / restart some of them. Gimsatul does not share this malleability. We thus would have to redesign its thread management.
 
+For the above mentioned reasons we decided to implement a (in our opinion) more elegant architechture, shown in figure \ref{fig:architecture}: We adapted Gimsatul to be a single solver engine in MallobSat, thus avoiding the initialisation and malleability problems with Gimsatul.
 
 \begin{figure}
   \center
   \includegraphics[scale=.2]{figures/architektur.png}
-  \caption{Architecture}
+  \caption{Architecture. TODO: make pretty}
   \label{fig:architecture}
 \end{figure}
 
+\subsubsection{Creating the Solver Engine}
 
-% Nicht vergessen: die zusätzliche diversifizierung in Gimsatul
+MallobSat assumes its solver engines to be serial blackbox sat solvers leaving us with the challange to fiddle with MallobSat's engine setup, so that our multi threaded Gimsatul Instance looks and behaves like a serial SAT-solver.
+When initializing a process with $t$ solver engines, i.e. threads, MallobSat creates a portfolio of $t$ solvers from a given regular expression that defines the portfolio for the execution of MallobSat. We adapted this procedure to akkumulate all $t' \leq t$ threads that are defined to be Gimsatul threads into a single solver engine and then run Gimsatul with $t'$ threads. The MallobSat process now contains $t - t'$ solver engines and operates like the process runs with $t - t'$ threads -- at most one of them beeing a Gimsatul Instance.
+
+MallobSat and Gimsatul both implement some diversification over their respective threads (i.e. solver engines / rings). Since Gimsatul runs multiple rings inside a single solver engine we also had to adapt both these procedures to wirk in tandem.
+The biggest part of MallobSat's diversification that actually has to be supported by the solver engine and is not done on a meta level over multiple engines are the so called 'sparse random variable phases', originally introduced by Balyo et al. \cite{hordeSat}. This procedure flips the phases of random literals in a solver engine with probability $1 / e$ for a run with $e$ engines in total. Each process runs this algorithm with $e = t * p$, where $t$ denotes the number of engines in a process and $p$ denotes the number of processes. Since Gimsatul runs with multiple threads we can not na\"ively flip its phases like we could with a serial solver engine. Instead of flipping the phases given by MallobSat our Gimsatul engine calculates and applies the sparse random variable phases for its $t'$ rings itself (i.e. flipping a phase with probability $1 / (t' * p)$). If a process runs with a single Gimsatul engine this results in the same outcome.
+Gimsatul's native diversification only ever applies the same phase for all its variables. We added the calculated sparse random variable phases on top of Gimsatul's diversification by flipping the respective initial phases of a ring.
+
+\subsubsection{Clause Export}
+% nicht vergessen: der mallob export ist in den Gimsatul export integriert -> min 2 ringe
+
+\subsubsection{Clause Import}
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -778,9 +795,9 @@ TODO: write a (hopefully short) paragraph about what we didn't have time for any
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Appendix}
+\appendix
 
-\subsection{Speedups per Family and Setup}
+\section{Speedups per Family and Setup}
 \label{app:speedupsFamiliesComplete}
 \begin{longtable}{ lccccccc }
   \toprule
