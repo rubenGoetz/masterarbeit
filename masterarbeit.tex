@@ -268,6 +268,10 @@ TODO: an overview over what we did in this thesis
 
 TODO: some Definitions used in this thesis. Probably a fairly small section due to the emphasis on engineering.
 
+\begin{itemize}
+  \item glue and lbd values
+\end{itemize}
+
 \subsection{Related Work}
 
 TODO: talk about sat solving in general
@@ -284,11 +288,23 @@ TODO: talk about approaches that have been taken to reduce memory demand in para
 
 \section{The Algorithm}
 
-In this section we want to introduce MallobSat and Gimsatul, the core building blocks of our work. We integrated Gimsatul into MallobSat as a Solver backend to utilize both Gimsatul's memory efficiency, achieved by shared memory clause sharing, and MallobSat's hyper parallel scalability. We also want to describe the architecture we used to make it possible to use the already parallel SAT-solver Gimsatul as a solver backend in MallobSat.
+In this section we want to introduce MallobSat and Gimsatul, the core building blocks of our work. We integrated Gimsatul into MallobSat as a Solver backend to utilize both Gimsatul's memory efficiency, achieved by shared memory clause sharing, and MallobSat's massively parallel scalability. We also want to describe the architecture we used to make it possible to use the already parallel SAT-solver Gimsatul as a solver backend in MallobSat.
 
 \subsection{MallobSat}
 
+MallobSat \cite{mallobSat} is a massively parallel SAT-solver that categorizes itself as a clause-sharing solver rather than the more common term 'portfolio solver', due to its focus on clause sharing and paradigm of treating solver engines as blackbox serial SAT-solvers. In this section we want to give a broad overview over MallobSat's architechture and only describe the systems that we had to adapt in more detail. A complete record of MallobSat's inner workings can be found in its dedicated paper by Schreiber et al. \cite{mallobSat}.
 
+On an abstract view MallobSat combines existing serial SAT-solvers into a massively parallel distributed and malleable SAT-solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top.
+
+TODO: adapt Mallob Engine graphic
+
+MallobSat equips each process with a fixed size import buffer for each of the processes solver engines and a single fixed size export buffer that is shared between all solver engines in a process. The processes are organized into a distributed binary tree to enable clause sharing for distributed systems. The exchange of clauses between processes happens periodically. In the world of MallobSat the times between these so caMallobSat. lled 'collective sharing operations' are called epochs.
+%An epoch $e \geq 0$ starts with the sharing operation $e$, i.e. the first epoch $e = 0$ starts with the beginning of solving, the second epoch $e = 1$ beginns with the first sharing operation and so on.
+At the beginning of each epoch (besides the first one) a collective sharing operation is executed: Each process is combining its own export buffer with the ones of its children, filtering duplicate clauses along the way. This process is executed from the leafs up to the root of the binary communication tree. If the merged export buffer exeeds its limit, clauses are discarded by their priority. MallobSat prioritizes clauses first by length, then by their lbd value and finally lexicographically as a tie breaker. If the root process has recieved the merged export buffers, the resulting collection of clauses is then broadcast down the binary tree.
+
+Clause sharing from the perspective of a solver engine inside a process happens asynchonously: If a solver engine has deduced a clause it sees fit to be shared, the engine simply writes this clause into an export buffer and executes a callback method provided by MallobSat at any time. If a a solver engine is ready to import external clauses (usually when restarting) it can iterate through its dedicated import buffer and import clauses from there. Usually an engine then has to do some filtering of its own, e.g. not to import clauses it already derived itself or clauses containing literals the engine already marked as inactive. Engines might also want to shorten clauses even more, if it already falsified some literals contained in the newly imported clause.
+
+To keep the communication volume as low as possible and to make sure important clauses are not lost to overflowing buffers, MallobSat employs some highly soffisticated filtering mechnanisms for clauses that are im- and exported by solver engines. We treat these filter mechanism as blackboxes going forward. Like we mentiond earlier in this section, the interested reader is referred to the detailed description by Schreiber et al. in their dedicated paper \cite{mallobSat}.
 
 \subsection{Gimsatul}
 
@@ -303,6 +319,10 @@ TODO: adapt Gimsatuls clause sharing graphic
 To diversify the rings Gimsatul utilizes differing initialisations for the first random walks of each ring. Each ring can start this procedure with either all phases set to 1 or all phases set to 0. Again more detail is given in the original paper \cite{gimsatul}.
 
 \subsection{Architecture}
+
+We now want to describe the architectue of our algorithm, integrating Gimsatul (and with it its memory efficient shared memory approach) as a solver engine into MallobSat.
+
+
 
 \begin{figure}
   \center
@@ -356,7 +376,7 @@ In our experiments configuartion $B$ solved 10 benchmark instances, that configu
     \caption{}
     \label{fig:2nodeConfigMemCompare}
   \end{subfigure}
-  \caption{Comparison betweed thread configurations on two nodes.}
+  \caption{Comparison between thread configurations on two nodes.}
   \label{fig:2nodeConfigCompare}
 \end{figure}
 
