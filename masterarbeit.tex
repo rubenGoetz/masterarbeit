@@ -345,7 +345,10 @@ The biggest part of MallobSat's diversification that actually has to be supporte
 Gimsatul's native diversification only ever applies the same phase for all its variables. We added the calculated sparse random variable phases on top of Gimsatul's diversification by flipping the respective initial phases of a ring.
 
 \subsubsection{Clause Export}
-% nicht vergessen: der mallob export ist in den Gimsatul export integriert -> min 2 ringe
+
+To export clauses from Gimsatul we took the simplest possible approach by latching the MallobSat clause export to Gimsatul's native internal clause export\footnote{Since Gimsatul does not trigger its clause sharing routines when executed with a single thread, it will also only export its derived clauses to MallobSat when run with at least 2 threads. Since our focus is on memory efficiency we do not see any reasons to run Gimsatul with a single thread and therefore do not consider this a problem.}. The reasoning beeing that if Gimsatul consideres a clause to be good enough to be shared internally it is good enough to be shared externlly through MallobSat. This might not always be the case however, since Gimsatul is sharing clauses fairly aggressively -- capitalizing on its shared memory approach to not have to copy the shared clauses on each export. Rather than implementing additional heuristics to differentiate between clauses that should be exported to other rings only and clauses that should be shared globally through MallobSat we decided to rely on MallobSat's sophisticated clause filtering. Thus incidentally saving on the additional execution time a complementary heuristic would entail.
+
+Since MallobSat sees Gimsatul as a single solver engine it naturally keeps track of all the rings clauses as beeing produced by a single thread, preventing redundant clause sharing through Gimsatul and MallobSat.
 
 \subsubsection{Clause Import}
 
@@ -536,7 +539,7 @@ Instances of the family 'minimum-disagreement-parity' \cite{satComp2022} encode 
 
 \subsubsection{Comparison to MallobSat}
 
-In the following we denote benchmark instances that have been solved by all solvers present in a given context to be solved instances. We complementairy denote instances that have not been solved by at least one of the solvers in a given context as un- or partially solved instances.
+In the following we denote benchmark instances that have been solved by all solvers present in a given context to be solved instances. We complementary denote instances that have not been solved by at least one of the solvers in a given context as un- or partially solved instances.
 
 Figure \ref{fig:runtimeCompare} shows the comparisons between the runtimes for Mallob on the x-axis and our Approach on the y-axis for all instances that were solved by both algorithms. We differentiated into satisfiable and unsatisfiable instances. While the satisfiable instances show a wider variance than the unsatisfiable ones it is clear, that our approach sacrifices runtime efficiency for our attempt to increase memory efficiency. Especially for complex instances we can observe a clear tendancy for our algorithm to take up to an order of magnitude more time. We can see this trend for all setups.
 
