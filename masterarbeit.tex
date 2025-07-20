@@ -314,16 +314,16 @@ Gimsatul achieves its shared memory approach for clauses by only sharing pointer
 
 We do want to recap Gimsatul's clausesharing mechnanisms more closely however, since this will become importatnt later on. If a ring derives a clause it deems worthy to share (i.e. a clause with a low glucose level) it will store a reference to this clause inside a buffer of small constant size for each other ring. If a buffer is full it will throw out the clause with the highest glucose level in the buffer. When a ring decides to import a clause it will pick another ring at random and import the clause with the lowest glucose level in it's respective buffer.
 
-TODO: adapt Gimsatuls clause sharing graphic
+TODO: adapt Gimsatul's clause sharing graphic
 
 To diversify the rings Gimsatul utilizes differing initialisations for the first random walks of each ring. Each ring can start this procedure with either all phases set to 1 or all phases set to 0. Again more detail is given in the original paper \cite{gimsatul}.
 
 \subsection{Architecture}
 
-We now want to describe the architectue of our algorithm, integrating Gimsatul (and with it its memory efficient shared memory approach) as a solver engine into MallobSat.
+We now want to describe the architectue of our algorithm, integrating Gimsatul (and with it its memory efficient shared memory approach) as a solver engine into MallobSat. In the following we will use 'external' and 'internal' when talking about our architecture w.r.t. MallobSat from the point of few of a Gimsatul instance. E.g. When rings of a Gimsatul instance exchange derived clauses we will denote this as 'internal clause exchange', if a Gimsatul instance is exchanging clauses as a solver engine in MallobSat we will call this 'external clause exchange'.
 
 The most intuitive approach to integrate Gimsatul into MallobSat would be to consider each ring in a Gimsatul instance as a solver engine in MallobSat, complying with MallobSat's paradigm of each solver engine beeing an independent serial SAT-solver. This approach runs into some fundamental problems however: 
-First off, Gimsatul is initialized by reading the original CNF Formula of a given Problem, running some preprocessing, initializing a single ring and then cloning said ring $t - 1$ times to create its $t$ solving threads (i.e. rings). If we integrated each ring to be a solver engine in MallobSat we would have to reimplement all of Gimsatuls initialisation to create each ring independently. This would make it unfeasible to keep Gimsatuls shared memory Clauses.
+First off, Gimsatul is initialized by reading the original CNF Formula of a given Problem, running some preprocessing, initializing a single ring and then cloning said ring $t - 1$ times to create its $t$ solving threads (i.e. rings). If we integrated each ring to be a solver engine in MallobSat we would have to reimplement all of Gimsatul's initialisation to create each ring independently. This would make it unfeasible to keep Gimsatul's shared memory Clauses.
 Even more problematic would be MallobSat's malleability though. MallobSat is able to handle a fluctuating number of solver engines. If necessary it will make use of its malleability and stop / restart some of them. Gimsatul does not share this malleability. We thus would have to redesign its thread management.
 
 For the above mentioned reasons we decided to implement a (in our opinion) more elegant architechture, shown in figure \ref{fig:architecture}: We adapted Gimsatul to be a single solver engine in MallobSat, thus avoiding the initialisation and malleability problems with Gimsatul.
@@ -348,11 +348,23 @@ Gimsatul's native diversification only ever applies the same phase for all its v
 
 To export clauses from Gimsatul we took the simplest possible approach by latching the MallobSat clause export to Gimsatul's native internal clause export\footnote{Since Gimsatul does not trigger its clause sharing routines when executed with a single thread, it will also only export its derived clauses to MallobSat when run with at least 2 threads. Since our focus is on memory efficiency we do not see any reasons to run Gimsatul with a single thread and therefore do not consider this a problem.}. The reasoning beeing that if Gimsatul consideres a clause to be good enough to be shared internally it is good enough to be shared externlly through MallobSat. This might not always be the case however, since Gimsatul is sharing clauses fairly aggressively -- capitalizing on its shared memory approach to not have to copy the shared clauses on each export. Rather than implementing additional heuristics to differentiate between clauses that should be exported to other rings only and clauses that should be shared globally through MallobSat we decided to rely on MallobSat's sophisticated clause filtering. Thus incidentally saving on the additional execution time a complementary heuristic would entail.
 
-Since MallobSat sees Gimsatul as a single solver engine it naturally keeps track of all the rings clauses as beeing produced by a single thread, preventing redundant clause sharing through Gimsatul and MallobSat.
+Since MallobSat sees Gimsatul as a single solver engine it naturally keeps track of all the rings' clauses as beeing produced by a single thread, preventing redundant clause sharing through Gimsatul and MallobSat.
 
 \subsubsection{Clause Import}
 
+Usually MallobSat's solver engines import all the external clauses stored in their import buffer every time they do a restart. This way they are importing on decision level zero and do not have to consider their current state when deciding whether to keep the imported clauses. 
 
+Importing external clauses into Gimsatul turned out to be a bit more complex though. Since we integrated Gimsatul as a single solver engine into MallobSat, we had to work with a single import buffer. MallobSat's import buffers are built in a way that clauses are immediatly deleted when read by the solver engine. We want to reason our approach by first discussing two scrapped approaches.
+
+\textbf{Rings import independently.} To make it possible for every ring to read the import buffer independently we would have had to redesign both MallobSat's import buffers, and Gimsatul's clause lifecycle. The import buffers would need some functionality to keep track of which rings had already read which clauses. And Gimsatul' rings would have needed some functionality to import only the reference to a clause, if it had already been imported into the shared memory by another ring. 
+
+\textbf{Single dedicated importing ring.} Having a dedicated ring to import all clauses from the import buffen whenever it does a restart left the challange of spreading the imported external clauses through all of Gimsatul's rings. This approach already resulted in some scalability improvements over vanilla Gimsatul. However, since Gimsatul's internal clause sharing utilizes buffers of extremely limited size, importing the full import buffer from MallobSat all at once and immediatly exporting them internally in Gimsatul would dicard many of the external clauses by overflowing internal buffers.
+
+\textbf{Our approach.} We combined the afore mentioned approaches to spread externally imported clauses throughout Gimsatul's rings without having to import an external clause multiple times by letting each ring exclusively import a small set of clauses from MallobSat's import buffer: 
+In our approach all rings try to import clauses from MallobSat's import buffer when restarting. To avoid race conditions and to minimize active waiting times we allow only one ring to import external clauses at a time. We utilize an atomic flag to indicate wether a ring is currently importing external clauses. If a ring is restarting and the flag is not set (i.e. no other ring is currently importing) it starts it's the importing routine. If the flag is set (i.e. some other ring is currently importing) it continues its solving routine to avoid actively waiting. 
+When a ring is importing external clauses they are handled like they were deduced by the importing ring and instantly internally exported to eventually spread them throughout all rings. 
+% Annahme: das funktioniert. Ich kann zur Zeit nicht auf superMUC zugreifen :(
+To avoid overflowing Gimsatul's internal export buffers, a ring checks all of said export buffers for free slots before importing. It then only imports at most so many external clauses, that no overflows occour. For example: If we run a Gimsatul instance with 3 rings as a solver engine in MallobSat and ring 0 tries to import some external clauses it will check its export buffers for ring 1 and 2 and might find them to have 4 and 6 free slots respectively. It will then import at most 4 clauses from MallobSat's import buffer.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
