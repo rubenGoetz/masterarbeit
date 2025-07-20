@@ -294,9 +294,14 @@ In this section we want to introduce MallobSat and Gimsatul, the core building b
 
 MallobSat \cite{mallobSat} is a massively parallel SAT-solver that categorizes itself as a clause-sharing solver rather than the more common term 'portfolio solver', due to its focus on clause sharing and paradigm of treating solver engines as blackbox serial SAT-solvers. In this section we want to give a broad overview over MallobSat's architechture and only describe the systems that we had to adapt in more detail. A complete record of MallobSat's inner workings can be found in its dedicated paper by Schreiber et al. \cite{mallobSat}.
 
-On an abstract view MallobSat combines existing serial SAT-solvers into a massively parallel distributed and malleable SAT-solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top.
+On an abstract view MallobSat combines existing serial SAT-solvers into a massively parallel distributed and malleable SAT-solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top. This system is depicted in figure \ref{fig:architectureMallob}.
 
-TODO: adapt Mallob Engine graphic
+\begin{figure}
+  \center
+  \includegraphics[scale=.3]{figures/mallob_architecture.png}
+  \caption{MallobSat's process architecture. Arrows depict clause transfers. This depiction is inspired by Schreiber et al.'s original depiction \cite{mallobSat}.}
+  \label{fig:architectureMallob}
+\end{figure}
 
 MallobSat equips each process with a fixed size import buffer for each of the processes solver engines and a single fixed size export buffer that is shared between all solver engines in a process. The processes are organized into a distributed binary tree to enable clause sharing for distributed systems. The exchange of clauses between processes happens periodically. In the world of MallobSat the times between these so called 'collective sharing operations' are called epochs.
 %An epoch $e \geq 0$ starts with the sharing operation $e$, i.e. the first epoch $e = 0$ starts with the beginning of solving, the second epoch $e = 1$ beginns with the first sharing operation and so on.
@@ -312,26 +317,31 @@ Gimsatul \cite{gimsatul} is a paralell portfolio SAT-solver that aims to reduce 
 
 Gimsatul achieves its shared memory approach for clauses by only sharing pointers to newly derived clauses instead of whole clause themselfs. To make this possible Fleury and Biere revisit the classical watcher data structures, resulting in all rings sharing their clauses in memory but maintaining their own watcher data structures independently. Further details are given in the original paper \cite{gimsatul}.
 
-We do want to recap Gimsatul's clausesharing mechnanisms more closely however, since this will become importatnt later on. If a ring derives a clause it deems worthy to share (i.e. a clause with a low glucose level) it will store a reference to this clause inside a buffer of small constant size for each other ring. If a buffer is full it will throw out the clause with the highest glucose level in the buffer. When a ring decides to import a clause it will pick another ring at random and import the clause with the lowest glucose level in it's respective buffer.
+We do want to recap Gimsatul's clausesharing mechnanisms more closely however, since this will become importatnt later on. The process is depicted in figure \ref{fig:architectureGimsatul}. If a ring derives a clause it deems worthy to share (i.e. a clause with a low glucose level) it will store a reference to this clause inside a buffer of small constant size for each other ring. If a buffer is full it will throw out the clause with the highest glucose level in the buffer. When a ring decides to import a clause it will pick another ring at random and import the clause with the lowest glucose level in it's respective buffer.
 
-TODO: adapt Gimsatul's clause sharing graphic
+\begin{figure}
+  \center
+  \includegraphics[scale=.3]{figures/gimsatul_architecture.png}
+  \caption{Gimsatuls's clause sharing architecture for an examplary instance with 3 rings. This depiction is inspired by Fleury and Biere's original depiction \cite{gimsatul}.}
+  \label{fig:architectureGimsatul}
+\end{figure}
 
 To diversify the rings Gimsatul utilizes differing initialisations for the first random walks of each ring. Each ring can start this procedure with either all phases set to 1 or all phases set to 0. Again more detail is given in the original paper \cite{gimsatul}.
 
 \subsection{Architecture}
 
-We now want to describe the architectue of our algorithm, integrating Gimsatul (and with it its memory efficient shared memory approach) as a solver engine into MallobSat. In the following we will use 'external' and 'internal' when talking about our architecture w.r.t. MallobSat from the point of few of a Gimsatul instance. E.g. When rings of a Gimsatul instance exchange derived clauses we will denote this as 'internal clause exchange', if a Gimsatul instance is exchanging clauses as a solver engine in MallobSat we will call this 'external clause exchange'.
+We now want to describe the architecture of our algorithm, integrating Gimsatul (and with it its memory efficient shared memory approach) as a solver engine into MallobSat. In the following we will use 'external' and 'internal' when talking about our architecture w.r.t. MallobSat from the point of few of a Gimsatul instance. E.g. When rings of a Gimsatul instance exchange derived clauses we will denote this as 'internal clause exchange', if a Gimsatul instance is exchanging clauses as a solver engine in MallobSat we will call this 'external clause exchange'.
 
 The most intuitive approach to integrate Gimsatul into MallobSat would be to consider each ring in a Gimsatul instance as a solver engine in MallobSat, complying with MallobSat's paradigm of each solver engine beeing an independent serial SAT-solver. This approach runs into some fundamental problems however: 
 First off, Gimsatul is initialized by reading the original CNF Formula of a given Problem, running some preprocessing, initializing a single ring and then cloning said ring $t - 1$ times to create its $t$ solving threads (i.e. rings). If we integrated each ring to be a solver engine in MallobSat we would have to reimplement all of Gimsatul's initialisation to create each ring independently. This would make it unfeasible to keep Gimsatul's shared memory Clauses.
 Even more problematic would be MallobSat's malleability though. MallobSat is able to handle a fluctuating number of solver engines. If necessary it will make use of its malleability and stop / restart some of them. Gimsatul does not share this malleability. We thus would have to redesign its thread management.
 
-For the above mentioned reasons we decided to implement a (in our opinion) more elegant architechture, shown in figure \ref{fig:architecture}: We adapted Gimsatul to be a single solver engine in MallobSat, thus avoiding the initialisation and malleability problems with Gimsatul.
+For the above mentioned reasons we decided to implsement a (in our opinion) more elegant architechture, shown in figure \ref{fig:architecture}: We adapted Gimsatul to be a single solver engine in MallobSat, thus avoiding the initialisation and malleability problems with Gimsatul.
 
 \begin{figure}
   \center
-  \includegraphics[scale=.2]{figures/architektur.png}
-  \caption{Architecture. TODO: make pretty}
+  \includegraphics[scale=.3]{figures/architecture.png}
+  \caption{Architecture integrating Gimsatul into MallobSat as a solver engine. Arrows depict clause transfers (or the transfer of references between rings).}
   \label{fig:architecture}
 \end{figure}
 
