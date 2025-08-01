@@ -392,15 +392,44 @@ Usually MallobSat's solver engines import all the external clauses stored in the
 
 Importing external clauses into Gimsatul turned out to be a bit more complex though. Since we integrated Gimsatul as a single solver engine into MallobSat, we had to work with a single import buffer. MallobSat's import buffers are built in a way that clauses are immediately deleted when read by the solver engine. We want to reason our approach by first discussing two scrapped approaches.
 
-\textbf{Rings import independently.} To make it possible for every ring to read the import buffer independently we would have had to redesign both MallobSat's import buffers, and Gimsatul's clause lifecycle. The import buffers would need some functionality to keep track of which rings had already read which clauses. And Gimsatul' rings would have needed some functionality to import only the reference to a clause, if it had already been imported into the shared memory by another ring. 
+\subsubsection{Rings Import Independently}
 
-\textbf{Single dedicated importing ring.} Having a dedicated ring to import all clauses from the import buffer whenever it does a restart left the challenge of spreading the imported external clauses through all of Gimsatul's rings. This approach already resulted in some scalability improvements over vanilla Gimsatul. However, since Gimsatul's internal clause sharing utilizes buffers of extremely limited size, importing the full import buffer from MallobSat all at once, and immediately exporting them internally in Gimsatul, would discard many of the external due to internal buffer overflows.
+To make it possible for every ring to read the import buffer independently we would have had to redesign both MallobSat's import buffers, and Gimsatul's clause lifecycle. The import buffers would need some functionality to keep track of which rings had already read which clauses. And Gimsatul's rings would have needed some functionality to import only the reference to a clause, if it had already been imported into the shared memory by another ring. 
 
-\textbf{Our approach.} We combined the afore mentioned approaches to spread externally imported clauses throughout Gimsatul's rings without having to import an external clause multiple times by letting each ring exclusively import a small set of clauses from MallobSat's import buffer: 
-In our approach all rings try to import clauses from MallobSat's import buffer when restarting. To avoid race conditions and to minimize active waiting times we allow only one ring to import external clauses at a time. We utilize an atomic flag to indicate whether a ring is currently importing external clauses. If a ring is restarting and the flag is not set (i.e. no other ring is currently importing) it starts it's the importing routine. If the flag is set (i.e. some other ring is currently importing) it continues its solving routine to avoid actively waiting. 
-When a ring is importing external clauses they are handled like they were deduced by the importing ring and instantly internally exported to eventually spread them throughout all rings. 
-% Annahme: das funktioniert. Ich kann zur Zeit nicht auf superMUC zugreifen :(
-To avoid overflowing Gimsatul's internal export buffers, a ring checks all of said export buffers for free slots before importing. It then only imports at most so many external clauses, that no overflows occur. For example: If we run a Gimsatul instance with 3 rings as a solver engine in MallobSat and ring 0 tries to import some external clauses it will check its export buffers for ring 1 and 2 and might find them to have 4 and 6 free slots respectively. It will then import at most 4 clauses from MallobSat's import buffer.
+\subsubsection{Single dedicated importing ring.}
+\label{sec:singleDedicatedImportRing}
+
+Having a dedicated ring to import all clauses from the import buffer whenever it does a restart left the challenge of spreading the imported external clauses through all of Gimsatul's rings. This approach already resulted in some scalability improvements over vanilla Gimsatul. However, since Gimsatul's internal clause sharing utilizes buffers of extremely limited size, importing the full import buffer from MallobSat all at once, and immediately exporting them internally in Gimsatul, would discard many of the external due to internal buffer overflows.
+
+\subsubsection{Our approach.}
+
+We combined the aforementioned approaches to spread externally imported clauses throughout Gimsatul's rings without having to import an external clause multiple times by letting each ring exclusively import a small set of clauses from MallobSat's import buffer: 
+In our approach all rings try to import clauses from MallobSat's import buffer when restarting. To avoid race conditions and to minimize active waiting times we allow only one ring to import external clauses at a time. We utilize an atomic flag to indicate whether a ring is currently importing external clauses. If a ring is restarting and the flag is not set (i.e. no other ring is currently importing) it starts its importing routine. If the flag is set (i.e. some other ring is currently importing) it continues its solving routine to avoid actively waiting. 
+When a ring is importing external clauses they are handled as if they were deduced by the importing ring and instantly internally exported to eventually spread them throughout all rings. Importing all available clauses in the import buffer, regularly leads to overflowing Gimsatul's internal buffers, as discussed in the section \ref{sec:singleDedicatedImportRing} above. To avoid this we propose the following 5 upper limits on the amount of clauses imported in one go.
+% Find most scalable limit. will be Threads or half pool (constant number)
+
+% import t clauses per importing operation
+% import only so many clauses as can fit in fullest internal buffer
+% import only so many clauses as can fit in second fullest buffer
+% import half of buffer size many clauses
+% import mean free slots in buffers many clauses
+
+\textbf{Minimum Free Slots.} Before importing external clauses, a ring checks all its internal export buffers, to find the one with the fewest free slots. This minimum is then used as the limit on importing external clauses.
+This strategy does not result in the loss of any external clauses through overflowing buffers. It can, however, result in external clauses not being imported at all in this importing call, if at least one internal export buffer is full.
+%To avoid overflowing Gimsatul's internal export buffers, it only ever imports at most a small constant number of clauses at once.
+%a ring checks all of said export buffers for free slots before importing. It then only imports at most so many external clauses, that no overflows occur. For example: If we run a Gimsatul instance with 3 rings as a solver engine in MallobSat and ring 0 tries to import some external clauses it will check its export buffers for ring 1 and 2 and might find them to have 4 and 6 free slots respectively. It will then import at most 4 clauses from MallobSat's import buffer.
+
+\textbf{Secondary Minimum Free Slots.} Like the first strategy, a ring will check all its internal export buffers. It will however, take the second to fewest free slots as the limit for importing external clauses. This strategy avoids a single full buffer from blocking the import operation.
+
+\textbf{Mean Free Slots.} Before importing external clauses, a ring calculates the mean free slots over all its internal export buffers. This mean is then used as the limit on importing external clauses.
+This strategy can result in not every external clause reaching every ring. We do expect external clauses to be imported more aggressively, however. Resulting in external clauses reaching rings earlier and sometimes replacing worse internal clauses in the internal export buffers.
+
+\textbf{Amount of Rings.} The amount of rings in a Gimsatul instance is used as the limit on importing external clauses.
+This follows the thought of ``one clause for every ring''. Since Gimsatul's internal export buffers are of limited constant size this results in overflowing buffers if there are too many rings in a single Gimsatul instance.
+
+\textbf{Constant.} The limit is set by a small constant number between 1 and the size of the internal export buffers.
+
+In our experiments we found the three strategies \textit{Mean Free Slots}, \textit{Amount of Rings} and \textit{Constant} to perform similarly and the remaining two strategies \textit{Minimum Free Slots} and \textit{Secondary Minimum Free Slots} notably worse.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
