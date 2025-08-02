@@ -337,7 +337,7 @@ Gimsatul \cite{gimsatul} is a parallel portfolio SAT-solver that aims to reduce 
 
 Gimsatul achieves its shared memory approach for clauses by only sharing pointers to newly derived clauses instead of whole clause themselfs. To make this possible Fleury and Biere revisit the classical watcher data structures, resulting in all rings sharing their clauses in memory but maintaining their own watcher data structures independently. Further details are given in the original article \cite{gimsatul}.
 
-We do want to describe Gimsatul's clausesharing mechanisms im more detail however, since this will become important later on. The process is depicted in figure \ref{fig:architectureGimsatul}. If a ring derives a clause it deems worthy to share (i.e. a clause with a low glucose level) it will store a reference to this clause inside a buffer of small constant size for each other ring. If a buffer is full, it will overwrite the clause with the highest glucose level in the buffer. If all clauses in the buffer have a lower glucose level than the currently exported clause, it will not be inserted. When a ring decides to import a clause, it will pick another ring at random and import the clause with the lowest glucose level in it's respective buffer -- Deleting the clause from the buffer in the process.
+We do want to describe Gimsatul's clause sharing mechanisms in more detail however, since this will become important later on. The process is depicted in figure \ref{fig:architectureGimsatul}. If a ring derives a clause it deems worthy to share (i.e. a clause with a low glucose level) it will store a reference to this clause inside a buffer of small constant size for each other ring. If a buffer is full, it will overwrite the clause with the highest glucose level in the buffer. If all clauses in the buffer have a lower glucose level than the currently exported clause, it will not be inserted. When a ring decides to import a clause, it will pick another ring at random and import the clause with the lowest glucose level in it's respective buffer -- Deleting the clause from the buffer in the process.
 
 \begin{figure}
   \center
@@ -844,12 +844,13 @@ Our second interesting observation are the extreme jitters in some of our lines 
 % 16node 75-percentile for all memory ratios: 4.820217834212041
 % 16node Geometric mean of geometric means: 0.21154183679147623
 
+\subsection{Miscallaneous Findings}
 
+\subsubsection{LBDs in Clause sharing}
 
+Schreiber et al. \cite{searchOnlyPaper} found LBD values not to be a useful metric for clause sharing operations. They underline this claim in part by running MallobSat with artificial LBD values for shared clauses. More precisely the LBD values are either set to the maximum (i.e. the clause length) or drawn from a uniform or a triangular distribution. They find the maximum LBD values for every clause to perform similarly to the original LBD values. Both the uniform and triangular distributions perform slightly worse.
 
-\subsection{Miscallaneous Findings?}
-
-TODO: Any interesting findings that have no other place. Collected Statistics for maybe?
+We were able to recreate these findings with our configuration of running only Gimsatul as solver engines in MallobSat. Thus, further strengthening the notion that LBD values do not constitute a meaningful metric when deciding which clauses to share.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
