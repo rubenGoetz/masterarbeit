@@ -254,7 +254,7 @@ Memory in cloud applications can be expensive or highly limited on slim processi
 
 TODO: make motivation a meaningful paragraph
 
-\subsection{Contribution}
+\subsection{Contributions}
 
 We combined the state of the art massively parallel SAT-solver MallobSat with the shared memory SAT-solver Gimsatul, by implementing Gimsatul as a solver engine. We evaluate the resulting Algorithm on its runtime performance, speedups and memory consumption on up to 768 cores. In our direct comparison to the state of the art parallel SAT-solver MallobSat in its default search only configuration we observed a significant decrease in memory consumption, albeit with a not insignificant runtime increase for most instances.
 
@@ -290,11 +290,26 @@ CDCL-type SAT solvers learn additional clauses when running into conflicts. To e
 \subsection{Related Work}
 \label{sec:relatedWork}
 
+TODO: mechanics of modern serial sat solvers
+
+A driving factor for the continuous advancements in the SAT community is the international SAT Competition \cite{satCompWebsite}. It has taken place in the years 1992, 1993, 1996, and every year since 2002. Participants can generally submit benchmarks and SAT solvers for a main track (serial solvers) and a parallel track. Some years feature additional tracks, such as the cloud track in 2024. All solvers are required to provide a satisfying assignment for satisfiable instances. On the main track, solvers are additionally required to provide proofs of unsatisfiability for unsatisfiable instances. While proofs of unsatisfiability have not been required for the parallel tracks until now, there have been advances made to equip parallel solvers with proof generation capabilities \cite{mallobProofs}.
+Over the past years the main tracks have been primarily dominated by variants of Kissat \cite{kissat} and an occasional variant of CaDiCaL \cite{cadical}, while the parallel tracks have been more contested.
+
 TODO: talk about sat solving in general
+\begin{itemize}
+  \item Clause Learning
+\end{itemize}
 
 \subsubsection{Parallel SAT-Solving}
 
 TODO: talk about the state of the Art in parallel SAT-Solving
+\begin{itemize}
+  \item subspace partitioning
+  \item assembly of experts
+  \item portfolio / clause sharing (ManySAT \cite{manySAT} pioneer)
+  \item hordeSat / MallobSat
+  \item SAT competition
+\end{itemize}
 
 \subsubsection{MallobSat}
 
@@ -322,6 +337,12 @@ We treat these filter mechanism as blackboxes going forward. Like we mentiond ea
 \subsubsection{Memory Efficient SAT-Solving}
 
 TODO: talk about approaches that have been taken to reduce memory demand in parallel sat-solving.
+\begin{itemize}
+  \item pruning, encoding
+  \item serial: \cite{mahajan2004zchaff2004}?, all SAT \cite{grumberg2004memory}
+  \item parallel: shared clause database \cite{iser2019memory}, there are a few shared memory sat solvers.
+  \item I found nothing about massively parallel memory efficiency...
+\end{itemize}
 
 \subsubsection{Gimsatul}
 
