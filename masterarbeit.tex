@@ -249,14 +249,14 @@ TODO: write some introduction into parallel sat solving in general
 
 \subsection{Motivation}
 
-Memory in cloud applications can be expensive or highly limited on slim processing nodes. We thus want to try to limit memory consumption by combining Gimsatul -- a shared memory clause sharing satsolver -- with the massively parallel SAT-solver MallobSat.
+Memory in cloud applications can be expensive or highly limited on slim processing nodes. We thus want to try to limit memory consumption by combining Gimsatul -- a shared memory clause sharing satsolver -- with the massively parallel SAT solver MallobSat.
 
 
 TODO: make motivation a meaningful paragraph
 
 \subsection{Contributions}
 
-We combined the state of the art massively parallel SAT-solver MallobSat with the shared memory SAT-solver Gimsatul, by implementing Gimsatul as a solver engine. We evaluate the resulting Algorithm on its runtime performance, speedups and memory consumption on up to 768 cores. In our direct comparison to the state of the art parallel SAT-solver MallobSat in its default search only configuration we observed a significant decrease in memory consumption, albeit with a not insignificant runtime increase for most instances.
+We combined the state of the art massively parallel SAT solver MallobSat with the shared memory SAT solver Gimsatul, by implementing Gimsatul as a solver engine. We evaluate the resulting Algorithm on its runtime performance, speedups and memory consumption on up to 768 cores. In our direct comparison to the state of the art parallel SAT solver MallobSat in its default search only configuration we observed a significant decrease in memory consumption, albeit with a not insignificant runtime increase for most instances.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -267,10 +267,10 @@ In this section we first want to give some preliminary definitions that will be 
 \subsection{Definitions}
 \label{sec:definitions}
 
-In the following, we will first define the theoretical SAT problem in section \ref{sec:SATproblem} and then some terminology commonly used, when discussing so called SAT solvers in section \ref{sec:solverNotation}.
+%In the following, we will first define the theoretical SAT problem in section \ref{sec:SATproblem} and then some terminology commonly used, when discussing so called SAT solvers in section \ref{sec:solverNotation}.
 
-\subsubsection{The SAT Problem}
-\label{sec:SATproblem}
+%\subsubsection{The SAT Problem}
+%\label{sec:SATproblem}
 
 The \textit{boolean satisfiability decision problem}, or as it is more widely known, the \textit{SAT decision problem} (\textit{SAT problem} in the following), was first introduced by Cook \cite{satProblem} as the original NP-complete problem. It asks whether a boolean function is satisfiable.
 
@@ -278,27 +278,21 @@ We define the SAT problem as follows:
 A boolean \textit{variable} can assume at most one of the values $true$ or $false$. Each boolean \textit{function} of arity $n$ (i.e., containing $n$ variables) can also be evaluated to either $true$ or $false$. In such a formula, a variable $x$ can occur as is or negated in the form of $\bar{x}$. We call the occurrences of $x$ and $\bar{x}$ \textit{literals}. A \textit{disjunction} is a formula that evaluates to $true$ if and only if at least one of its literals is $true$. A \textit{conjunction} is a formula that evaluates to $true$ if and only if all its components (i.e., formulas or literals) evaluate to $true$. We say a formula is in \textit{conjunctive normal form (CNF)} if it is a conjunction containing only disjunctions. Since all boolean functions can be represented as a CNF \cite{cnfPaper}, we assume formulas to be given in CNF form. 
 The SAT problem now is to decide whether a CNF formula $F$ is satisfiable. I.e., if there exists a variable assignment $\mathcal{A}$ so that $F$ evaluates to $true$ for $\mathcal{A}$. In practical applications, we also demand a concrete variable assignment if an algorithm claims a formula to be satisfiable.
 
-\subsubsection{SAT-Solver Terminology}
-\label{sec:solverNotation}
+%\subsubsection{SAT-Solver Terminology}
+%\label{sec:solverNotation}
 
-In the following we will use the word \textit{SAT-solver} for a program designed to solve the previously described SAT problem on concrete instances, usually given as a CNF in the \textit{DIMACS CNF file} format.
-
-Most modern SAT solvers build on the \textit{DPLL} \cite{dpllPaper} algorithm and its successor the \textit{Conflict-Driven Clause Learning (CDCL)} algorithm \cite{cdclSolvers}. Both the DPLL and the CDCL algorithm perform a backtracking search over possible variable assignments. In each step the solver makes a \textit{decision} to assign a variable to be $true$ or $false$. If this results in an unsatisfiable clause, we call this a \textit{conflict}. When a conflict is found, the solver backtracks to a point, at which no conflict remains. If no satisfying assignment can be found in this way, the solver reports the formula to be unsatisfiable. Some solvers, especially parallel ones, predefine their initial decisions per variable. We denote this as the \textit{phase} of a variable. Most modern SAT solvers regularly \textit{restart} their search routines, to avoid wasting time on bad branching decisions that happen early on.
-
-CDCL-type SAT solvers learn additional clauses when running into conflicts. To evaluate the significance of such clauses, some metrics have been proposed. SAT solvers often reduce their clause database on the basis of such heuristics. Most notably Audemard and Simon \cite{lbdPaper} introduced the \textit{Literals Blocks Distance (LBD)}, sometimes called the \textit{glue value}. The LBD of a conflict clause is the number of decisions a solver made before arriving at said clause. As such the LBD depends on the specific decisions made by a solver and can shrink over time.
+In the following we will use the term \textit{SAT solver} for a program designed to solve the previously described SAT problem on concrete instances, usually given as a CNF in the \textit{DIMACS CNF file} format.
 
 \subsection{Related Work}
 \label{sec:relatedWork}
 
-TODO: mechanics of modern serial sat solvers
+Most modern SAT solvers build on the \textit{DPLL} \cite{dpllPaper} algorithm and its successor, the \textit{Conflict-Driven Clause Learning (CDCL)} algorithm \cite{cdclSolvers}. Both the DPLL and the CDCL algorithm perform a backtracking search over possible variable assignments. In each step, the solver makes a \textit{decision} to assign a variable to be $true$ or $false$. If this results in an unsatisfiable clause, we call this a \textit{conflict}. To assure good performance on a variety of applications, solvers heavily rely on decision heuristics to select a decision variable (see e.g. \cite{biere2015evaluating}, \cite{moskewicz2001chaff}, \cite{biere2008adaptive}). We call the initial value given to a decision variable its \textit{phase}. Modern solvers again use heuristics to assign favorable phases (see e.g. \cite{componentPhases}, \cite{cai2022better}). Some solvers might even predefine the phases of their variables, for example as a diversification technique in parallel portfolio solvers.
+When a conflict is found, the solver backtracks to a point, at which no conflict remains. If no satisfying assignment can be found in this way, the solver reports the formula to be unsatisfiable. Most modern SAT solvers regularly \textit{restart} their search routines, to avoid wasting time on bad branching decisions that happen early on. Like decition heuristics, a good restarting strategy is an integral part of modern SAT solvers (see e.g. \cite{gomes1998boosting}, \cite{gomes2000heavy}, \cite{oh2015between}).
+
+CDCL-type SAT solvers learn additional clauses when running into conflicts (see e.g. \cite{silva1996grasp}, \cite{beame2003understanding}, \cite{allUIPclauselearning}, \cite{allUIPclauselearningBetter}). To evaluate the significance of such clauses, some metrics have been proposed. SAT solvers often reduce their clause database on the basis of such heuristics. Most notably, Audemard and Simon \cite{lbdPaper} introduced the \textit{Literals Blocks Distance (LBD)}, sometimes called the \textit{glue value}. The LBD of a conflict clause is the number of decisions a solver made before arriving at said clause. As such, the LBD depends on the specific decisions made by a solver and can shrink over time.
 
 A driving factor for the continuous advancements in the SAT community is the international SAT Competition \cite{satCompWebsite}. It has taken place in the years 1992, 1993, 1996, and every year since 2002. Participants can generally submit benchmarks and SAT solvers for a main track (serial solvers) and a parallel track. Some years feature additional tracks, such as the cloud track in 2024. All solvers are required to provide a satisfying assignment for satisfiable instances. On the main track, solvers are additionally required to provide proofs of unsatisfiability for unsatisfiable instances. While proofs of unsatisfiability have not been required for the parallel tracks until now, there have been advances made to equip parallel solvers with proof generation capabilities \cite{mallobProofs}.
 Over the past years the main tracks have been primarily dominated by variants of Kissat \cite{kissat} and an occasional variant of CaDiCaL \cite{cadical}, while the parallel tracks have been more contested.
-
-TODO: talk about sat solving in general
-\begin{itemize}
-  \item Clause Learning
-\end{itemize}
 
 \subsubsection{Parallel SAT-Solving}
 
@@ -313,9 +307,9 @@ TODO: talk about the state of the Art in parallel SAT-Solving
 
 \subsubsection{MallobSat}
 
-MallobSat \cite{mallobSat} is a massively parallel SAT-solver that categorizes itself as a clause-sharing solver rather than the more common term 'portfolio solver'. This comes from the realization, that MallobSat remains scalable even without directly diversifying its solver engines -- that is to say the only differences between the solver engine's executions are the timing at which they import clauses. Suggesting the clause sharing to play an even bigger role than the portfolio itself. MallobSat follows a paradigm of treating solver engines as blackbox serial SAT solvers. In this section we want to give a broad overview over MallobSat's architecture and only describe the systems that we had to adapt in more detail. A complete record of MallobSat's inner workings can be found in a dedicated article by Schreiber and Sanders \cite{mallobSat}.
+MallobSat \cite{mallobSat} is a massively parallel SAT solver that categorizes itself as a clause-sharing solver rather than the more common term 'portfolio solver'. This comes from the realization, that MallobSat remains scalable even without directly diversifying its solver engines -- that is to say the only differences between the solver engine's executions are the timing, at which they import clauses. Suggesting the clause sharing to play an even bigger role than the portfolio itself. MallobSat follows a paradigm of treating solver engines as blackbox serial SAT solvers. In this section we want to give a broad overview over MallobSat's architecture and only describe the systems that we had to adapt in more detail. A complete record of MallobSat's inner workings can be found in a dedicated article by Schreiber and Sanders \cite{mallobSat}.
 
-On an abstract view MallobSat combines existing serial SAT solvers into a massively parallel distributed and malleable SAT-solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top. This system is depicted in Figure \ref{fig:architectureMallob}.
+On an abstract view MallobSat combines existing serial SAT solvers into a massively parallel distributed and malleable SAT solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top. This system is depicted in Figure \ref{fig:architectureMallob}.
 
 \begin{figure}
   \center
@@ -346,7 +340,7 @@ TODO: talk about approaches that have been taken to reduce memory demand in para
 
 \subsubsection{Gimsatul}
 
-Gimsatul \cite{gimsatul} is a parallel portfolio SAT-solver that aims to reduce its memory consumption and enable aggressive clause sharing by using a shared memory approach for its clauses. The solver engines are CDCL solvers. In the terminology of Gimsatul these solver threads are called rings. There also exists a ruler thread, handling initialization and synchronization of its rings.
+Gimsatul \cite{gimsatul} is a parallel portfolio SAT solver that aims to reduce its memory consumption and enable aggressive clause sharing by using a shared memory approach for its clauses. The solver engines are CDCL solvers. In the terminology of Gimsatul these solver threads are called rings. There also exists a ruler thread, handling initialization and synchronization of its rings.
 
 Gimsatul achieves its shared memory approach for clauses by only sharing pointers to newly derived clauses instead of whole clauses. To make this possible Fleury and Biere revisit the classical watcher data structures, resulting in all rings sharing their clauses in memory but maintaining their own watcher data structures independently. Further details are given in the original article \cite{gimsatul}.
 
@@ -365,7 +359,7 @@ To diversify the rings, Gimsatul utilizes differing strategies for the first loc
 
 \section{Approach}
 
-In this section we want to introduce MallobSat and Gimsatul, the core building blocks of our work. We integrated Gimsatul into MallobSat as a Solver backend to utilize both Gimsatul's memory efficiency, achieved by shared memory clause sharing, and MallobSat's massively parallel scalability. We also want to describe the architecture we used to make it possible to use the already parallel SAT-solver Gimsatul as a solver backend in MallobSat.
+In this section we want to introduce MallobSat and Gimsatul, the core building blocks of our work. We integrated Gimsatul into MallobSat as a Solver backend to utilize both Gimsatul's memory efficiency, achieved by shared memory clause sharing, and MallobSat's massively parallel scalability. We also want to describe the architecture we used to make it possible to use the already parallel SAT solver Gimsatul as a solver backend in MallobSat.
 
 \subsection{General Architecture}
 
@@ -482,11 +476,11 @@ In our experiments configuration $B$ solved 10 benchmark instances, that configu
   \label{fig:2nodeConfigCompare}
 \end{figure}
 
-To further configure MallobSat's options we implemented a search only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e., no simplifying or probing. For Gimsatul this has the additional effect of avoiding the synchronization between all rings of a Gimsatul instance. This increases memory consumption due to missing compacting procedures but avoids idling rings while waiting for other rings to synchronize. To preprocess the formula we utilized the Kissat SAT-solver \cite{kissat}. We found a significant increase in performance due to this practice. (TODO: give a Figure? This experiment was only run on the institute servers...)
+To further configure MallobSat's options we implemented a search only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e., no simplifying or probing. For Gimsatul this has the additional effect of avoiding the synchronization between all rings of a Gimsatul instance. This increases memory consumption due to missing compacting procedures but avoids idling rings while waiting for other rings to synchronize. To preprocess the formula we utilized the Kissat SAT solver \cite{kissat}. We found a significant increase in performance due to this practice. (TODO: give a Figure? This experiment was only run on the institute servers...)
 
 \subsection{Runtime and Memory Usage}
 
-We first want to discuss our findings on runtime regarding the scalability on up to 16 nodes (i.e., 768 processors). We then compare our Algorithm to the state of the art distributed SAT-solver MallobSat with its default configuration utilizing one Kissat instance per processor.
+We first want to discuss our findings on runtime regarding the scalability on up to 16 nodes (i.e., 768 processors). We then compare our Algorithm to the state of the art distributed SAT solver MallobSat with its default configuration utilizing one Kissat instance per processor.
 
 \subsubsection{Speedups}
 
@@ -511,7 +505,7 @@ As shown in Figure \ref{fig:runtimeCompareGim} we ran our algorithm on 1, 2, 4, 
   \label{fig:scale}
 \end{figure}
 
-To calculate Speedups we ran the sate of the art serial SAT-solver Kissat for up to 3000s on a single processor. The results of this run are shown in Figure \ref{fig:runtimeSerial}. The geometric means over all speedups for benchmark instances solved by Kissat are shown in table \ref{tab:speedups}. We can see an increase in the geometric mean speedup for our algorithm with increasing amounts of processors, albeit with deminishing returns. The specific speedups for all instances that were solved by Kissat in a timelimit of 3000s are shown in Figure \ref{fig:speedups}. Here we can observe a significant variation in speedups for simple instances (i.e., instances Kissat solved in under 500 seconds). For complex instances (i.e., instances where Kissat needed more than 500 seconds) we can see a tendency for the speedups to become greater. For really complex instances the speedups routily beat the geometric mean while their variance increases even more.
+To calculate Speedups we ran the sate of the art serial SAT solver Kissat for up to 3000s on a single processor. The results of this run are shown in Figure \ref{fig:runtimeSerial}. The geometric means over all speedups for benchmark instances solved by Kissat are shown in table \ref{tab:speedups}. We can see an increase in the geometric mean speedup for our algorithm with increasing amounts of processors, albeit with deminishing returns. The specific speedups for all instances that were solved by Kissat in a timelimit of 3000s are shown in Figure \ref{fig:speedups}. Here we can observe a significant variation in speedups for simple instances (i.e., instances Kissat solved in under 500 seconds). For complex instances (i.e., instances where Kissat needed more than 500 seconds) we can see a tendency for the speedups to become greater. For really complex instances the speedups routily beat the geometric mean while their variance increases even more.
 
 \begin{figure}
   \center
