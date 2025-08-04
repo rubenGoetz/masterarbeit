@@ -321,20 +321,13 @@ MallobSat equips each process with a fixed maximum size import buffer for each o
 
 Clause sharing from the perspective of a solver engine inside a process happens asynchronously: If a solver engine has deduced a clause it sees fit to be shared, the engine simply executes a callback method provided by MallobSat at any time. If a a solver engine is ready to import external clauses (usually when restarting) it can iterate through its dedicated import buffer and import clauses from there. Usually an engine then has to do some filtering of its own, e.g. not to import clauses containing literals the engine already eliminated. Engines also need to shorten clauses even more, if it already falsified some literals contained in the newly imported clause.
 
-To keep the communication volume as low as possible and to make sure important clauses are not lost to overflowing buffers, MallobSat employs some highly sophisticated filtering mechanisms for clauses that are im- and exported by solver engines. 
-
-TODO: reiterate most important mechanisms
-
-We treat these filter mechanism as blackboxes going forward. Like we mentiond earlier in this section, the interested reader is referred to the detailed description by Schreiber and Sanders in their dedicated article \cite{mallobSat}.
+To keep the communication volume as low as possible and to ensure important clauses are not lost to overflowing buffers, MallobSat employs some highly sophisticated filtering mechanisms for clauses that are imported and exported by solver engines. In particular these mechanisms prevent clauses from being mirrored back to the solver engine that produced them. They also prevent clauses from being imported by a solver engine multiple times, by filtering out any clauses that entered a solver engine's import buffer in the last $z$ epochs. The parameter $z$ is user-defined. Clauses are not indefinitely kept from being imported multiple times, since solvers tend to "forget" clauses regularly. This allows solver engines relearn important clauses after some time. We treat these filter mechanisms as blackboxes going forward. Like we mentiond earlier in this section, the interested reader is referred to the detailed description by Schreiber and Sanders in their dedicated article \cite{mallobSat}.
 
 \subsubsection{Memory Efficient SAT-Solving}
 
 Most research in SAT solving focuses on optimizing a solver's runtime for general-purpose SAT solving or specific use cases. With all the advancements over the past years, especially in parallel SAT solving, it has become feasible to solve ever more complex SAT problems and larger instances. However, this progress brings us to a point, where the memory consumption of a solver might become a bottleneck for its performance. Clause sharing portfolio solvers typically have their solver engines manage their clauses independently -- thus storing multiple copies of their clauses. Currently, there is little research on this frontier, other than pre- and inprocessing techniques reducing a CNF's size. Iser et al. addressed this problem, by adapting the portfolio solver Candy, to utilize a shared clause database \cite{iser2019memory}. Fleury and Biere approached the problem with their solver Gimsatul \cite{gimsatul}, by sharing clauses using a true shared memory approach -- storing only a single copy for every clause and merely exchanging pointers to clauses. Since Gimsatul is of particular interest to this work, we describe it in more detail below. Gimsatul's shared memory architecture makes it inherently unsuitable to be executed in distributed environments such as HPC-clusters, however. Iser et al. also evaluated their approach on only up to 16 cores, leaving massively parallel applications out of the question.
 
-TODO: encoding to shrink instance size
-\begin{itemize}
-  \item pruning, encoding
-\end{itemize}
+TODO: compression of cnfs
 
 \subsubsection{Gimsatul}
 
