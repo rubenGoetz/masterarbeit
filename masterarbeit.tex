@@ -174,7 +174,7 @@
 
 \hrule\medskip
 
-Hiermit versichere ich, dass ich diese Arbeit selbständig verfasst und keine anderen, als die angegebenen Quellen und Hilfsmittel benutzt, die wörtlich oder inhaltlich übernommenen Stellen als solche kenntlich gemacht und die Satzung des Karlsruher Instituts für Technologie zur Sicherung guter wissenschaftlicher Praxis in der jeweils gültigen Fassung beachtet habe. Die Verwendung von LLMs wurde auf Rechtschreib- und geringfügige Grammatikprüfung begrenzt.
+Hiermit versichere ich, dass ich diese Arbeit selbständig verfasst und keine anderen, als die angegebenen Quellen und Hilfsmittel benutzt, die wörtlich oder inhaltlich übernommenen Stellen als solche kenntlich gemacht und die Satzung des Karlsruher Instituts für Technologie zur Sicherung guter wissenschaftlicher Praxis in der jeweils gültigen Fassung beachtet habe. Die Verwendung von LLMs wurde auf Rechtschreibprüfung und geringfügige Grammatikprüfung begrenzt.
 
 \bigskip
 
@@ -245,18 +245,17 @@ Ort, Datum
 
 \section{Introduction}
 
-TODO: write some introduction into parallel sat solving in general
+Over the past 30 years, the SAT community has vastly improved the performance of SAT solvers -- increasing the size of feasible instances by multiple orders of magnitude. With this development, SAT solvers have become an integral tool in many industries, solving a myriad of practical problems. They are used, for example, in hardware verification of new chip designs, software verification, automated planning, scheduling, and cryptoanalysis. SAT solvers also play an important role as building blocks of Satisfiability Modulo Theory (SMT) solvers, which are in turn widely used in verification and theorem proving.
 
-\subsection{Motivation}
+With SAT being the original NP-complete problem, SAT solvers are commonly used as universal solvers for other NP-hard problems, such as finding the chromatic number of a graph or the clique decision problem. Theoretical computer scientists also utilize SAT solvers as a tool for large computer-aided proofs, e.g., for Pythagorean triples.
 
-Memory in cloud applications can be expensive or highly limited on slim processing nodes. We thus want to try to limit memory consumption by combining Gimsatul -- a shared memory clause sharing satsolver -- with the massively parallel SAT solver MallobSat.
+The shifting focus in chip development, away from increasing clock rates and toward parallel cores, together with the need to solve problems of ever-increasing size gives reason to develop parallel SAT solvers. Especially in high-performance computing (e.g., when providing SAT solving as a cloud application), clusters often utilize slim nodes. Such nodes are equipped with fairly limited memory per core. This raises problems for most state of the art distributed SAT solvers, since they commonly store a complete copy of the problem for every core.
 
-
-TODO: make motivation a meaningful paragraph
+In this work, we approach this problem by combining memory efficient shared memory SAT solving with scalable distributed SAT solving. More precisely, we integrate the shared memory solver Gimsatul \cite{gimsatul} into the massively parallel clause sharing solver MallobSat \cite{mallobSat}.
 
 \subsection{Contributions}
 
-We combined the state of the art massively parallel SAT solver MallobSat with the shared memory SAT solver Gimsatul, by implementing Gimsatul as a solver engine. We evaluate the resulting Algorithm on its runtime performance, speedups and memory consumption on up to 768 cores. In our direct comparison to the state of the art parallel SAT solver MallobSat, in its default search-only configuration, we observed a significant decrease in memory consumption, albeit with a not insignificant runtime increase for most instances.
+We combine the state of the art massively parallel SAT solver MallobSat with the shared memory SAT solver Gimsatul, by implementing Gimsatul as a solver engine. We evaluate our approach in-depth on its runtime performance, speedups and memory consumption on up to 768 cores. In our direct comparison to the state of the art parallel SAT solver MallobSat (in its default search-only configuration), we observe a significant decrease in memory consumption, albeit with a not insignificant runtime increase for most instances.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -267,19 +266,11 @@ In the following section \ref{sec:definitions}, we first give some preliminary d
 \subsection{Definitions}
 \label{sec:definitions}
 
-%In the following, we will first define the theoretical SAT problem in section \ref{sec:SATproblem} and then some terminology commonly used, when discussing so called SAT solvers in section \ref{sec:solverNotation}.
-
-%\subsubsection{The SAT Problem}
-%\label{sec:SATproblem}
-
 The \textit{boolean satisfiability decision problem}, or as it is more widely known, the \textit{SAT decision problem} (\textit{SAT problem} in the following), was first introduced by Cook \cite{satProblem} as the original NP-complete problem. It asks whether a boolean function is satisfiable.
 
 We define the SAT problem as follows:
 A boolean \textit{variable} can assume at most one of the values $true$ or $false$. Each boolean \textit{function} of arity $n$ (i.e., containing $n$ variables) can also be evaluated to either $true$ or $false$. In such a formula, a variable $x$ can occur as is or negated in the form of $\bar{x}$. We call the occurrences of $x$ and $\bar{x}$ \textit{literals}. A \textit{disjunction} is a formula that evaluates to $true$ if and only if at least one of its literals is $true$. A \textit{conjunction} is a formula that evaluates to $true$ if and only if all its components (i.e., formulas or literals) evaluate to $true$. We say a formula is in \textit{conjunctive normal form (CNF)} if it is a conjunction containing only disjunctions. Since all boolean functions can be represented as a CNF \cite{cnfPaper}, we assume formulas to be given in CNF form. 
 The SAT problem now is to decide whether a CNF formula $F$ is satisfiable. I.e., if there exists a variable assignment $\mathcal{A}$ so that $F$ evaluates to $true$ for $\mathcal{A}$. In practical applications, we also demand a concrete variable assignment if an algorithm claims a formula to be satisfiable.
-
-%\subsubsection{SAT-Solver Terminology}
-%\label{sec:solverNotation}
 
 In the following, we will use the term \textit{SAT solver} for a program designed to solve the previously described SAT problem on concrete instances, usually given as a CNF in the \textit{DIMACS CNF file} format.
 
@@ -287,7 +278,7 @@ In the following, we will use the term \textit{SAT solver} for a program designe
 \label{sec:relatedWork}
 
 Most modern SAT solvers build on the \textit{DPLL} \cite{dpllPaper} algorithm and its successor, the \textit{Conflict-Driven Clause Learning (CDCL)} algorithm \cite{cdclSolvers}. Both the DPLL and the CDCL algorithm perform a backtracking search over possible variable assignments. In each step, the solver makes a \textit{decision} to assign a variable to be $true$ or $false$. If this results in an unsatisfiable clause, we call this a \textit{conflict}. To assure good performance on a variety of applications, solvers heavily rely on decision heuristics to select a decision variable (see e.g. \cite{biere2015evaluating, moskewicz2001chaff, biere2008adaptive}). We call the initial value given to a decision variable its \textit{phase}. Modern solvers use heuristics to assign favorable phases (see e.g. \cite{componentPhases, cai2022better}). Some solvers might even predefine the phases of their variables, for example as a diversification technique in parallel portfolio solvers.
-When a conflict is found, the solver backtracks to a point, at which no conflict remains. If no satisfying assignment can be found in this way, the solver reports the formula to be unsatisfiable. Most modern SAT solvers regularly \textit{restart} their search routines, to avoid wasting time on bad branching decisions that happen early on. Like decition heuristics, a good restarting strategy is an integral part of modern SAT solvers (see e.g. \cite{gomes1998boosting, gomes2000heavy, oh2015between}). Modern solvers also include sophisticated \textit{pre- and inprocessing} techniques \cite{biere2021preprocessing}, to reduce a problem's complexity before and in between their CDCL loops.
+When a conflict is found, the solver backtracks to a point, at which no conflict remains. If no satisfying assignment can be found in this way, the solver reports the formula to be unsatisfiable. Most modern SAT solvers regularly \textit{restart} their search routines, to avoid wasting time on bad branching decisions that happen early on. Like decision heuristics, a good restarting strategy is an integral part of modern SAT solvers (see e.g. \cite{gomes1998boosting, gomes2000heavy, oh2015between}). Modern solvers also include sophisticated \textit{pre- and inprocessing} techniques \cite{biere2021preprocessing}, to reduce a problem's complexity before and in between their CDCL loops.
 
 CDCL-type SAT solvers learn additional clauses when running into conflicts (see e.g., \cite{silva1996grasp, beame2003understanding, allUIPclauselearning, allUIPclauselearningBetter}). To evaluate the significance of such clauses, some metrics have been proposed. SAT solvers often reduce their clause database on the basis of such heuristics. Most notably, Audemard and Simon \cite{lbdPaper} introduced the \textit{Literals Blocks Distance (LBD)}, sometimes called the \textit{glue value}. The LBD of a conflict clause is the number of decisions a solver made before arriving at said clause. As such, the LBD depends on the specific decisions made by a solver and can shrink over time.
 
@@ -447,7 +438,6 @@ In our experiments, configuration $B$ solved 10 benchmark instances that configu
   \label{fig:1nodeConfigCompare}
 \end{figure}
 
-% TODO: fix plots
 \begin{figure}
   \center
   \begin{subfigure}[c]{0.45\textwidth}
