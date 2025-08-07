@@ -204,7 +204,7 @@ Ort, Datum
 \selectlanguage{english}
 \begin{abstract}
 \centerline{Abstract}
-  TODO: write some Abstract.
+  We integrate Fleury and Biere's shared memory SAT solver Gimsatul \cite{gimsatul} into Schreiber and Sanders' clause sharing SAT solver MallobSAT \cite{mallobSat} as a solver engine, in an attempt to combine memory efficient parallel SAT solving with scalable distributed clause sharing. We evaluate our approach on up to 768 cores. Our results show scaling capabilities in massively parallel settings and a significant decrease in memory consumption, compared to MallobSat's default configuration, in all stages of solving -- albeit with increased runtimes.
 \end{abstract}
 \selectlanguage{english}
 
@@ -502,7 +502,7 @@ To calculate speedups, we ran the sate of the art serial SAT solver Kissat \cite
   \begin{tabular}{ cccc }
     \toprule
     \multicolumn{2}{c}{Setup} & \multicolumn{2}{c}{Solver}\\
-    \#nodes   & \#processors   & Our Approach  & MallobSat \\
+    \#nodes   & \#cores   & Our Approach  & MallobSat \\
     \midrule
     1  & 48  & 5.357    & 7.847\\
     2  & 96  & 7.384    & -\\
@@ -577,6 +577,7 @@ Instances of the family \textit{minimum-disagreement-parity} \cite{satComp2022},
 \end{table}
 
 \subsubsection{Comparison to MallobSat}
+\label{sec:compare}
 
 In the following, we denote benchmark instances that have been solved by all solvers in a given context as \textit{solved instances}. Conversely, we denote instances that have not been solved by at least one solver in a given context as \textit{unsolved or partially solved instances}.
 
@@ -660,7 +661,7 @@ The exact memory consumption of our approach, as well as MallobSat's, is shown i
   \begin{tabular}{ cccccc }
     \toprule
     \multicolumn{2}{c}{Setup} & \multicolumn{2}{c}{Solved Instances} & \multicolumn{2}{c}{All Instances}\\
-    \#nodes & \#processors & Our Algorithm & MallobSat & Our Algorithm & MallobSat \\
+    \#nodes & \#cores & Our Algorithm & MallobSat & Our Algorithm & MallobSat \\
     \midrule
     1  & 48  & 3.745  & 6.875   & 4.488   & 8.494\\
     2  & 96  & 7.159  & -       & 9.301   & -\\
@@ -713,7 +714,7 @@ TODO: more outlier discussion in plots
   \center
   \begin{tabular}{ ccc }
     \toprule
-    \#nodes & \#processors & 75th percentile \\
+    \#nodes & \#cores & 75th percentile \\
     \midrule
     1  & 48  & 3.864\\
     4  & 192 & 4.288\\
@@ -754,14 +755,14 @@ TODO: talk about plots a bit
   \center
   \begin{tabular}{ ccc }
     \toprule
-    \#nodes & \#processors & Geometric Mean \\
+    \#nodes & \#cores & Geometric Mean \\
     \midrule
     1  & 48  & 0.282\\
     4  & 192 & 0.256\\
     16 & 762 & 0.216\\
     \bottomrule
   \end{tabular}
-  \caption{Geometric Means of the data points in Figure \ref{fig:memGmVars}. Calculated as described in section \ref{sec:GMs}}
+  \caption{Geometric Means of the data points in Figure \ref{fig:memGmVars}. Calculated as described in section \ref{sec:GMs}.}
   \label{tab:memGM}
 \end{table}
 
@@ -790,29 +791,52 @@ The second observation are the extreme jitters in some of our lines -- especiall
   \label{fig:memRatiosSecs}
 \end{figure}
 
-\subsection{Miscallaneous Findings}
-
-\subsubsection{LBDs in Clause sharing}
-
-Schreiber et al. \cite{searchOnlyPaper} found LBDs to be an impractical metric for clause sharing operations. They support this claim, in part, by running MallobSat with artificial LBDs for shared clauses. More precisely, the LBDs are either set to the maximum (i.e., the clause length) or drawn from a random distribution (uniform or triangular). They find, setting the LBDs to their maximum for every clause performs similar to the original LBDs. Both the uniform and triangular distributions perform slightly worse.
-
-We were able to reproduce these findings, with our configuration, that runs only Gimsatul as solver engines in MallobSat. This further strengthens the notion that LBDs do not constitute a meaningful metric when deciding which clauses to share.
+% PAR-2 scores
+% 1node_kis PAR-2: 180.82767644332498
+% 1node_1p_48t PAR-2: 234.1985425415617
+% 2node_1p_48t PAR-2: 210.472996790932
+% 4node_kis PAR-2: 138.579572395466
+% 4node_1p_48t PAR-2: 195.10140574811084
+% 8node_1p_48t PAR-2: 184.21757448110833
+% 16node_kis PAR-2: 114.08647329722923
+% 16node_1p_48t PAR-2: 176.12921210075567
+% Serial PAR-2: 1159.7390428211588
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusion}
 
-\subsection{Runtime-Memory Tradeoff}
+Our approach cannot compare to MallobSat's scalability. MallobSat consistently solves more instances on the same number of cores. On 16 nodes (768 cores), MallobSat solved 28 instances more and achieved a geometric mean speedup of 20.073, compared to our geometric mean speedup of 10.26. We do, however, see a consistent improvement in runtime with increasing numbers of cores in our approach -- especially on more complex instances. This is also reflected in the geometric mean speedups, which grow with the number of cores. The differences become especially apparent for unsatisfiable instances. MallobSat solved 27 unsatisfiable instances that our approach could not solve, while our approach solved only one unsatisfiable instance that MallobSat could not.
 
-TODO: Is the longer runtime worth the saved memory?
+Our approach does succeed in its goal to reduce memory consumption. In Section \ref{sec:compare}, we discuss a reduction in memory consumption per instance -- both solved and unsolved. We also show direct comparisons between the memory usage of our approach and that of MallobSat, both in absolute and relative values. Table \ref{tab:memGM} shows the geometric mean of the ratios between MallobSat's memory consumption and that of our approach, ranging from 0.216 to 0.282 -- depending on the number of cores used. The geometric mean of all these geometric means evaluates to 0.25. While this value alone cannot encapsulate the full complexity of our memory efficiency, it indicates an overall improvement in memory efficiency when compared to MallobSat. Furthermore, Figure \ref{fig:memRatiosSecs} shows that our improved memory efficiency does not only apply to maximum memory peaks, but also throughout all stages of solving.
 
-\subsection{Usecases of our Algorithm}
+Table \ref{tab:solvedPerGB} shows both the ratio of solved instances per overall memory used, and the ratio of solved instances per memory usage normalized by the number of cores. While MallobSat solves between 4.256 and 5.036 instances per GB of memory per core, our approach solves between 7.140 and 7.780.
 
-TODO: In what situations would our algorithm be preferable to other approaches?
+\begin{table}
+  \center
+  \begin{tabular}{ cccccc }
+    \toprule
+    \multicolumn{2}{c}{Setup} & \multicolumn{2}{c}{Overall Used Memory} & \multicolumn{2}{c}{Normalized}\\
+    \#nodes & \#cores & Our Approach & MallobSat & Our Approach & MallobSat \\
+    \midrule
+    1  & 48  & 0.149 & 0.089 & 7.140 & 4.256\\
+    2  & 96  & 0.076 & -     & 7.306 & -\\
+    4  & 192 & 0.039 & 0.026 & 7.583 & 5.036\\
+    8  & 384 & 0.020 & -     & 7.780 & -\\
+    16 & 762 & 0.010 & 0.006 & 7.766 & 4.924\\
+    \bottomrule
+  \end{tabular}
+  \caption{Solved instances per GB of overall used memory in the middle and the same values normalized by the number of cores}
+  \label{tab:solvedPerGB}
+\end{table}
+
+We thus conclude that our approach is applicable if memory efficiency per core is a greater concern than overall runtime. 
 
 \subsection{Future Work}
 
-TODO: write a (hopefully short) paragraph about what we didn't have time for anymore :(
+In the future, we would like to extend our experiments to comprise more complex portfolios. This might result in a happy middle ground between MallobSat's scalability and our memory efficiency. We would also be interested in finding previously unsolved SAT problems with notoriously high memory demands and seeing whether we can solve them, given enough time.
+
+TODO? some inprocessing seems to be missing. serial Kissat solved some instances really fast...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -898,6 +922,12 @@ TODO: write a (hopefully short) paragraph about what we didn't have time for any
   \caption{Speedups per family and Solver Setup}
   \label{tab:speedupsFamiliesComplete}
 \end{longtable}
+
+\section{LBDs in Clause sharing}
+
+Schreiber et al. \cite{searchOnlyPaper} found LBDs to be an impractical metric for clause sharing operations. They support this claim, in part, by running MallobSat with artificial LBDs for shared clauses. More precisely, the LBDs are either set to the maximum (i.e., the clause length) or drawn from a random distribution (uniform or triangular). They find, setting the LBDs to their maximum for every clause performs similar to the original LBDs. Both the uniform and triangular distributions perform slightly worse.
+
+We were able to reproduce these findings, with our configuration, that runs only Gimsatul as solver engines in MallobSat. This further strengthens the notion that LBDs do not constitute a meaningful metric when deciding which clauses to share.
 
 \bibliographystyle{eptcs}
 \bibliography{literatur}
