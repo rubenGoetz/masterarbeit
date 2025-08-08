@@ -245,6 +245,7 @@ Ort, Datum
 
 \section{Introduction}
 
+% TODO: Quellen?
 Over the past 30 years, the SAT community has vastly improved the performance of SAT solvers -- increasing the size of feasible instances by multiple orders of magnitude. With this development, SAT solvers have become an integral tool in many industries, solving a myriad of practical problems. They are used, for example, in hardware verification of new chip designs, software verification, automated planning, scheduling, and cryptoanalysis. SAT solvers also play an important role as building blocks of Satisfiability Modulo Theory (SMT) solvers, which are in turn widely used in verification and theorem proving.
 
 With SAT being the original NP-complete problem, SAT solvers are commonly used as universal solvers for other NP-hard problems, such as finding the chromatic number of a graph or the clique decision problem. Theoretical computer scientists also utilize SAT solvers as a tool for large computer-aided proofs, e.g., for Pythagorean triples.
@@ -457,9 +458,7 @@ In our experiments, configuration $B$ solved 10 benchmark instances that configu
   \label{fig:2nodeConfigCompare}
 \end{figure}
 
-To further configure MallobSat's options, we implemented a search-only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this, we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e., no simplification or probing. For Gimsatul this has the additional effect of avoiding synchronization between all rings of a Gimsatul instance. This increases memory consumption due to missing compacting procedures but avoids idling rings while waiting for other rings to synchronize. To preprocess the formula, we utilized the Kissat SAT solver \cite{kissat}. We found a significant increase in performance due to this practice. As the import strategy (as discussed in Section \ref{sec:ourApproach}), we chose the \textit{Amount of Rings} strategy, since it performed best in testing.
-
-(TODO: give a Figure for the search-only implementation? This experiment was only run on the institute servers...)
+To further configure MallobSat's options, we implemented a search-only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this, we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e., no simplification or probing. For Gimsatul this has the additional effect of avoiding synchronization between all rings of a Gimsatul instance. This increases memory consumption due to missing compacting procedures but avoids idling rings while waiting for other rings to synchronize. To preprocess the formula, we utilized the Kissat SAT solver \cite{kissat}. In preliminary experiments, we found a significant increase in performance due to this practice and therefore employ it throughout all of our experiments. As the import strategy (as discussed in Section \ref{sec:ourApproach}), we chose the \textit{Amount of Rings} strategy, since it performed best in testing.
 
 \subsection{Runtime and Memory Usage}
 
