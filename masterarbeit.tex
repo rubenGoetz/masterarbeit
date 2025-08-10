@@ -245,8 +245,8 @@ Ort, Datum
 
 \section{Introduction}
 
-% TODO: Quellen?
-Over the past 30 years, the SAT community has vastly improved the performance of SAT solvers -- increasing the size of feasible instances by multiple orders of magnitude. With this development, SAT solvers have become an integral tool in many industries, solving a myriad of practical problems. They are used, for example, in hardware verification of new chip designs, software verification, automated planning, scheduling, and cryptoanalysis. SAT solvers also play an important role as building blocks of Satisfiability Modulo Theory (SMT) solvers, which are in turn widely used in verification and theorem proving.
+% TODO: Quellen? Quellen. :(
+Over the past 30 years, the SAT community has vastly improved the performance of SAT solvers -- increasing the size of feasible instances by multiple orders of magnitude. With this development, SAT solvers have become an integral tool in many industries, solving a myriad of practical problems. They are used, for example, in hardware verification of new chip designs, software verification and software dependency \cite{abate2012dependency}, automated planning, scheduling, and cryptoanalysis. SAT solvers also play an important role as building blocks of Satisfiability Modulo Theory (SMT) solvers, which are in turn widely used in verification and theorem proving.
 
 With SAT being the original NP-complete problem, SAT solvers are commonly used as universal solvers for other NP-hard problems, such as finding the chromatic number of a graph or the clique decision problem. Theoretical computer scientists also utilize SAT solvers as a tool for large computer-aided proofs, e.g., for Pythagorean triples.
 
@@ -300,7 +300,7 @@ There have been some advances in the field of distributed SAT solving, such as t
 
 MallobSat \cite{mallobSat} is a massively parallel SAT solver that categorizes itself as a clause-sharing solver rather than the more common term 'portfolio solver'. This comes from the realization, that MallobSat remains scalable even without directly diversifying its solver engines -- that is to say the only differences between the solver engine's executions are the timing, at which they import clauses. Suggesting the clause sharing to play an even bigger role than the portfolio itself. MallobSat follows a paradigm of treating solver engines as blackbox serial SAT solvers. In this section we want to give a broad overview over MallobSat's architecture and only describe the systems that we had to adapt in more detail. A complete record of MallobSat's inner workings can be found in a dedicated article by Schreiber and Sanders \cite{mallobSat}.
 
-On an abstract view MallobSat combines existing serial SAT solvers into a massively parallel distributed and malleable SAT solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top. This system is depicted in Figure \ref{fig:architectureMallob}.
+On an abstract view MallobSat combines existing serial SAT solvers into a massively parallel distributed and malleable SAT solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so-called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top. This system is depicted in Figure \ref{fig:architectureMallob}.
 
 \begin{figure}
   \center
@@ -309,7 +309,7 @@ On an abstract view MallobSat combines existing serial SAT solvers into a massiv
   \label{fig:architectureMallob}
 \end{figure}
 
-MallobSat equips each process with a fixed maximum size import buffer for each of the processes solver engines and a single fixed maximum size export buffer that is shared between all solver engines in a process. The processes are organized into a distributed binary tree to enable clause sharing for distributed systems. The exchange of clauses between processes happens periodically. In the terminology of MallobSat the times between these so called 'collective sharing operations' are called epochs. At the beginning of each epoch a collective sharing operation is executed: Each process merges its own export buffer with those of its children, filtering duplicate clauses along the way. This process is applied from the leaves up to the root of the binary communication tree. If the merged export buffer exceeds its limit, clauses are discarded by their priority. MallobSat prioritizes clauses first by length, then by their lbd value and finally lexicographically as a tie breaker. The export buffer's limit is sub-liniear in the sice of its current sub-tree, resulting in an increasing quality criterion up the tree. If the root process has recieved the merged export buffers, the resulting collection of clauses is then broadcast down the binary tree.
+MallobSat equips each process with a fixed maximum size import buffer for each of the processes solver engines and a single fixed maximum size export buffer that is shared between all solver engines in a process. The processes are organized into a distributed binary tree to enable clause sharing for distributed systems. The exchange of clauses between processes happens periodically. In the terminology of MallobSat the times between these so-called 'collective sharing operations' are called epochs. At the beginning of each epoch a collective sharing operation is executed: Each process merges its own export buffer with those of its children, filtering duplicate clauses along the way. This process is applied from the leaves up to the root of the binary communication tree. If the merged export buffer exceeds its limit, clauses are discarded by their priority. MallobSat prioritizes clauses first by length, then by their lbd value and finally lexicographically as a tie breaker. The export buffer's limit is sub-liniear in the sice of its current sub-tree, resulting in an increasing quality criterion up the tree. If the root process has recieved the merged export buffers, the resulting collection of clauses is then broadcast down the binary tree.
 
 Clause sharing from the perspective of a solver engine inside a process happens asynchronously: If a solver engine has deduced a clause it sees fit to be shared, the engine simply executes a callback method provided by MallobSat at any time. If a a solver engine is ready to import external clauses (usually when restarting) it can iterate through its dedicated import buffer and import clauses from there. Usually an engine then has to do some filtering of its own, e.g. not to import clauses containing literals the engine already eliminated. Engines also need to shorten clauses even more, if it already falsified some literals contained in the newly imported clause.
 
@@ -366,7 +366,7 @@ MallobSat assumes its solver engines to be serial blackbox SAT solvers, leaving 
 When initializing a process with $t$ solver engines (i.e., threads), MallobSat creates a portfolio of $t$ solvers from a given regular expression that defines the portfolio for the execution of MallobSat. We adapted this procedure to accumulate all $t' \leq t$ threads that are defined to be Gimsatul threads into a single solver engine and then run Gimsatul with $t'$ threads. The MallobSat process now contains $t - t'$ solver engines and operates as if it ran with $t - t'$ threads -- at most one of them being a Gimsatul Instance.
 
 MallobSat and Gimsatul both implement some diversification over their respective threads (i.e., solver engines / rings). Since Gimsatul runs multiple rings inside a single solver engine we also had to adapt both these procedures to work in tandem.
-The biggest part of MallobSat's diversification that actually has to be supported by the solver engine and is not done on a meta level over multiple engines are the so called 'sparse random variable phases', originally introduced by Balyo et al. \cite{hordeSat}. This procedure flips the phases of random literals in a solver engine with probability $1 / e$ for a run with $e$ engines in total. Each process runs this algorithm with $e = t \cdot p$, where $t$ denotes the number of engines in a process and $p$ denotes the number of processes. Since Gimsatul runs with multiple threads we cannot na\"ively flip its phases like we could with a serial solver engine. Instead of flipping the phases given by MallobSat our Gimsatul engine calculates and applies the sparse random variable phases for its $t'$ rings itself (i.e., flipping a phase with probability $1 / (t' \cdot p)$). If a process runs with a single Gimsatul engine this results in the same outcome.
+The biggest part of MallobSat's diversification that actually has to be supported by the solver engine and is not done on a meta level over multiple engines are the so-called 'sparse random variable phases', originally introduced by Balyo et al. \cite{hordeSat}. This procedure flips the phases of random literals in a solver engine with probability $1 / e$ for a run with $e$ engines in total. Each process runs this algorithm with $e = t \cdot p$, where $t$ denotes the number of engines in a process and $p$ denotes the number of processes. Since Gimsatul runs with multiple threads we cannot na\"ively flip its phases like we could with a serial solver engine. Instead of flipping the phases given by MallobSat our Gimsatul engine calculates and applies the sparse random variable phases for its $t'$ rings itself (i.e., flipping a phase with probability $1 / (t' \cdot p)$). If a process runs with a single Gimsatul engine this results in the same outcome.
 Gimsatul's native diversification only ever applies the same phase for all its variables. We added the calculated sparse random variable phases on top of Gimsatul's diversification by flipping the respective initial phases of a ring.
 
 \subsection{Clause Export}
@@ -537,9 +537,9 @@ Table \ref{tab:speedupsSignificantFamilies} shows speedups separated by signific
 
 For all instances of the family \textit{cryptography-simon}, we found our approach to be slower than serial Kissat. This might suggest a systematic incompatibility between our approach and this kind of problem. All instances of this family, however, were solved in under $0.01\,$s by Kissat. Since the fastest measured runtime of our approach is $0.03\,$s, we attribute any slowdown for instances below $0.03\,$s to our increased startup overhead compared to Kissat.
 
-For instances of the family \textit{heule-folkman}, which encode proofs of whether a graph is a so called Folkman Graph \cite{satComp2024}, we find that serial Kissat generally performs better than our approach. In our experiments, Kissat solved all 10 instances of this family in our benchmark set while our approach only solved at most 3 instances. We currently cannot give a specific reason for this phenomenon. Schreiber et al. \cite{searchOnlyPaper} found their search-only approach in MallobSat to be non-beneficial on this family of instances as well. We therefore conclude that some inprocessing techniques applied by Kissat result in significant improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance, our approach appears to be unsuitable for the \textit{heule-folkman} family.
+For instances of the family \textit{heule-folkman}, which encode proofs of whether a graph is a so-called Folkman Graph \cite{satComp2024}, we find that serial Kissat generally performs better than our approach. In our experiments, Kissat solved all 10 instances of this family in our benchmark set while our approach only solved at most 3 instances. We currently cannot give a specific reason for this phenomenon. Schreiber et al. \cite{searchOnlyPaper} found their search-only approach in MallobSat to be non-beneficial on this family of instances as well. We therefore conclude that some inprocessing techniques applied by Kissat result in significant improvements in this case. Since we deactivated all pre- and inprocessing to improve overall performance, our approach appears to be unsuitable for the \textit{heule-folkman} family.
 
-TODO: what's up with rbsat? I cant find any info about the family...
+We find the highest geometric mean speedups, for any significant family, for a family called \textit{rbsat}. Instances of this family have been part of multiple SAT competitions over the years. However, there is no specific information about this family available. All five instances in our benchmark set are satisfiable. Kissat was able to solve three of them within its time limit of 3000 seconds.
 
 Instances of the family \textit{minimum-disagreement-parity} \cite{satComp2022}, encode the Minimum Disagreement Parity (MDP) problem, which is of interest to the cryptography community and results in challenging SAT problems. This is underlined by the small size of these instances: The largest one contains only 1021 variables, with the slowest solved by Kissat taking $2617.82\,$s and containing only 750 variables. This family comprises of 3 satisfiable, and 3 unsatisfiable instances. Our high geometric mean speedups of over 22 suggest that the MDP problem instances benefit from the increased processing power of parallel sat solving far more than other kinds of problems.
 
@@ -683,7 +683,7 @@ In the top left corner of Figure \ref{fig:memRatiosVars1node} we can see five in
 % hwmcc17miters-xits-iso-6s281b35.sanitized.cnf
 % hwmcc12miters-xits-iso-6s111.sanitized.cnf
 
-TODO: more outlier discussion in plots
+TODO: more outlier discussion in plots?
 
 \begin{figure}
   \center
@@ -725,9 +725,12 @@ TODO: more outlier discussion in plots
 \end{table}
 
 \label{sec:GMs}
-Up to this point, we have only discussed peak memory consumption. We now take a closer look at the relative memory consumption of our approach throughout the course of calculation. To give an overview, we calculated the relative memory consumption of our algorithm to MallobSat for each second, that both solvers were active. For example, if MallobSat finished its execution after 30s and our algorithm finished after 35s, we calculated the ratio between MallobSat's memory consumption and our approach's memory consumption for every second of the first 30 seconds. This way, we only compare their memory consumption during runtime. Figure \ref{fig:memGmVars} shows the geometric means of these calculated ratios. We marked the geometric mean of all data points with a black line. The exact geometric means for each subplot are given in Table \ref{tab:memGM}.
+Up to this point, we have only discussed peak memory consumption. We now take a closer look at the relative memory consumption of our approach throughout the course of calculation. To give an overview, we calculated the relative memory consumption between MallobSat and our approach for each second, that both solvers were active. For example, if MallobSat finished its execution after 30s and our algorithm finished after 35s, we calculated the ratio between MallobSat's memory consumption and our approach's memory consumption for every second of the first 30 seconds. This way, we only compare their memory consumption during runtime. Figure \ref{fig:memGmVars} shows the geometric means of these calculated ratios. We mark the geometric mean of all data points with a black line. The exact geometric means for each subplot are given in Table \ref{tab:memGM}.
+We clearly see that all data points are well below one -- showing that our approach uses less (geometric mean) memory than MallobSat during the same runtime. We also observe that the densest areas, across all configurations, are around the respective geometric means of all data points. These geometric means shrink slightly with the number of used cores: from 0.282 for 48 nodes, over 0.256 for 192, and down to 0.216 for our maximum of 762 nodes.
+All instances above $10^7$ variables encode so-called \textit{miters}. Miters encode two circuits to prove or disprove their equivalence via SAT solvers. We observe for all 14 of these fairly big instances that our approach's relative memory consumption, in relation to MallobSat, is noticeable shrinking with increasing numbers of cores.
 
-TODO: talk about plots a bit
+% There are two instances on the top right, where our approach does not have a big advantage. No parallel sover solved these instances while serial Kissat solved them fairly easily...
+% Names: oisc-subrv-sll-nested-13.cnf, oisc-subrv-sll-nested-11.cnf
 
 \begin{figure}
   \center
@@ -835,8 +838,6 @@ We thus conclude that our approach is applicable if memory efficiency per core i
 
 In the future, we would like to extend our experiments to comprise more complex portfolios. This might result in a happy middle ground between MallobSat's scalability and our memory efficiency. We would also be interested in finding previously unsolved SAT problems with notoriously high memory demands and seeing whether we can solve them, given enough time.
 
-TODO? some inprocessing seems to be missing. serial Kissat solved some instances really fast...
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \clearpage
@@ -921,6 +922,27 @@ TODO? some inprocessing seems to be missing. serial Kissat solved some instances
   \caption{Speedups per family and Solver Setup}
   \label{tab:speedupsFamiliesComplete}
 \end{longtable}
+
+\section{PAR-2 Scores}
+
+We evaluated the \textit{penalized average runtime (PAR-2)} score, as it was used in the SAT competition \cite{satCompWebsite} of 2024 to evaluate submitted solvers. It is calculated by taking the weighted average runtime over all instances, with unsolved instances included at a penalty of twice the time limit. The PAR-2 scores for MallobSat and our approach, for our time limit of 300 seconds, are listed in Table \ref{tab:par2}. They are, however, not directly comparable to the results of the SAT competition, since the competition used a much larger time limit of 5000 seconds.
+
+\begin{table}[h]
+  \center
+  \begin{tabular}{ cccccc }
+    \toprule
+    \#nodes & \#cores & Our Algorithm & MallobSat\\
+    \midrule
+    1  & 48  & 234.199 & 180.828\\
+    2  & 96  & 210.472 & -\\
+    4  & 192 & 195.101 & 138.580\\
+    8  & 384 & 184.218 & -\\
+    16 & 762 & 176.129 & 114.086\\
+    \bottomrule
+  \end{tabular}
+  \caption{PAR-2 scores for a time limit of 300 seconds.}
+  \label{tab:par2}
+\end{table}
 
 \section{LBDs in Clause sharing}
 
