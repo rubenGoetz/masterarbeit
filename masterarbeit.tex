@@ -87,7 +87,7 @@
 \hypersetup{
   pdftitle={Combining Memory-Efficient Parallel SAT Solving and Distributed Clause Sharing},
   pdfauthor={Ruben Götz},
-  pdfsubject={},  % TODO: add tags
+  pdfsubject={},
   colorlinks=true,
   pdfborder={0 0 0},
   bookmarksopen=true,
@@ -246,10 +246,9 @@ Ort, Datum
 
 \section{Introduction}
 
-% TODO: Quellen? Quellen. :(
-Over the past 30 years, the SAT community has vastly improved the performance of SAT solvers -- increasing the size of feasible instances by multiple orders of magnitude. With this development, SAT solvers have become an integral tool in many industries, solving a myriad of practical problems. They are used, for example, in hardware verification of new chip designs, software verification and software dependency \cite{abate2012dependency}, automated planning, scheduling, and cryptoanalysis. SAT solvers also play an important role as building blocks of Satisfiability Modulo Theory (SMT) solvers, which are in turn widely used in verification and theorem proving.
+Over the past 30 years, the SAT community has vastly improved the performance of SAT solvers -- increasing the size of feasible instances by multiple orders of magnitude. With this development, SAT solvers have become an integral tool in many industries, solving a myriad of practical problems. They are used, for example, in hardware verification \cite{vizel2015boolean}, software verification and software dependency \cite{abate2012dependency}, automated planning \cite{kautz1992planning}, scheduling \cite{metzner2005scheduling}, cryptoanalysis \cite{soos2009extending}, and (explainable) AI \cite{darwiche2020three, schidler2024sat}. SAT solvers also play an important role as building blocks of Satisfiability Modulo Theory (SMT) solvers, which are in turn widely used in verification and theorem proving \cite{monniaux2016survey}.
 
-With SAT being the original NP-complete problem, SAT solvers are commonly used as universal solvers for other NP-hard problems, such as finding the chromatic number of a graph or the clique decision problem. Theoretical computer scientists also utilize SAT solvers as a tool for large computer-aided proofs, e.g., for Pythagorean triples.
+With SAT being the original NP-complete problem, SAT solvers are commonly used as universal solvers for other NP-hard problems, such as solving Sudoku puzzles or the maximum clique problem \cite{bright2019effective}. Theoretical computer scientists also utilize SAT solvers as a tool for theorem proofing and large computer-aided proofs, like for Pythagorean triples \cite{kumar2016study}.
 
 The shifting focus in chip development, away from increasing clock rates and toward parallel cores, together with the need to solve problems of ever-increasing size gives reason to develop parallel SAT solvers. Especially in high-performance computing (e.g., when providing SAT solving as a cloud application), clusters often utilize slim nodes. Such nodes are equipped with fairly limited memory per core. This raises problems for most state of the art distributed SAT solvers, since they commonly store a complete copy of the problem for every core.
 
