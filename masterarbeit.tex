@@ -113,6 +113,7 @@
 \let\chapter=\section % repariert ein Problem mit algorithm2e
 
 \usepackage{longtable}
+\usepackage{float}
 
 \begin{document}
 
@@ -256,13 +257,21 @@ In this work, we approach this problem by combining memory efficient shared memo
 
 \subsection{Contributions}
 
-We combine the state of the art massively parallel SAT solver MallobSat with the shared memory SAT solver Gimsatul, by implementing Gimsatul as a solver engine. We evaluate our approach in-depth on its runtime performance, speedups and memory consumption on up to 768 cores. In our direct comparison to the state of the art parallel SAT solver MallobSat (in its default search-only configuration), we observe a significant decrease in memory consumption, albeit with a not insignificant runtime increase for most instances.
+We combine the state of the art massively parallel SAT solver MallobSat with the shared memory SAT solver Gimsatul by implementing Gimsatul as a solver engine. We evaluate our approach in-depth on its runtime performance, speedups, and memory consumption on up to 768 cores. 
+With this, our approach is able to solve 304 of our 400 instances within a time limit of 300 seconds and achieves a geometric mean speedup of 10.260 over the state of the art serial SAT solver Kissat \cite{kissat}. In our direct comparison to the state of the art parallel SAT solver MallobSat (in its default search-only configuration), we observe a significant decrease in memory consumption, albeit with a not insignificant runtime increase for most instances. Our approach's geometric mean of the geometric mean memory consumption, over the course of an instance's runtime, is between 0.282 and 0.216 when compared to MallobSat. For individual instances, our approach even consumes more than an order of magnitude less memory than MallobSat. 
+
+\subsection{Structure of the Thesis}
+
+We structure this thesis as follows: Section \ref{sec:preliminaries} contains essential definitions and provides an overview of SAT solving. This includes serial SAT solving, parallel SAT solving, and previous efforts to increase memory efficiency in SAT solvers. Furthermore, we introduce the two SAT solvers MallobSat \cite{mallobSat} and Gimsatul \cite{gimsatul} -- two essential building blocks of our work.
+Section \ref{sec:approach} gives a detailed description of the implementation of our new approach, which is then evaluated based on our experiments in Section \ref{sec:expEval}. Finally, we draw our conclusions in Section \ref{sec:conclusion}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\newpage
 \section{Preliminaries And Related Work}
+\label{sec:preliminaries}
 
-In the following section \ref{sec:definitions}, we first give some preliminary definitions, that are used throughout this work. In section \ref{sec:relatedWork} we give an overview over some related work including research into SAT solving in general, parallel SAT solving and attempts to reduce memory consumption in parallel SAT solvers.
+In the following section \ref{sec:definitions}, we first give some preliminary definitions that are used throughout this work. In section \ref{sec:relatedWork} we give an overview over some related work including research into SAT solving in general, parallel SAT solving and attempts to reduce memory consumption in parallel SAT solvers.
 
 \subsection{Definitions}
 \label{sec:definitions}
@@ -288,21 +297,22 @@ Over the past years the main tracks have been primarily dominated by variants of
 
 \subsubsection{Parallel SAT-Solving}
 
-When building a parallel SAT solver, there are two common orthogonal approaches. First, there is \textit{search space partitioning}: By dividing the possible search space of a problem into multiple disjoint subspaces, one can deploy independent solvers for each subspace. This is na\"ively done by assigning a value to a variable. This strategy is highly dependent on the actual partitioning heuristics \cite{schulz2010cooperate}. In the worst case, a search space is partitioned into two subproblems, that are both equally as hard as the original problem. It is also possible to create subproblems of uneven complexity, resulting in a challenging load balancing problem. There have been some solvers utilizing search space partitioning over the years \cite{jurkowiak2001parallelizing, blochinger2003parallel, feldman2005parallel}. To improve load balancing, Heule et al. \cite{heule2011cube} introduced the \textit{Cube\&Conquer} paradigm. It generates many partial assignments, called \textit{cubes}, and randomly assigns them to workers. This makes it unlikely for any worker to run out of tasks.
+When building a parallel SAT solver, there are two common orthogonal approaches. First, there is \textit{search space partitioning}: By dividing the possible search space of a problem into multiple disjoint subspaces, one can deploy independent solvers for each subspace. This is na\"ively done by assigning a value to a variable. This strategy is highly dependent on the actual partitioning heuristics \cite{schulz2010cooperate}. In the worst case, a search space is partitioned into two subproblems that are both equally as hard as the original problem. It is also possible to create subproblems of uneven complexity, resulting in a challenging load balancing problem. There have been some solvers utilizing search space partitioning over the years \cite{jurkowiak2001parallelizing, blochinger2003parallel, feldman2005parallel}. To improve load balancing, Heule et al. \cite{heule2011cube} introduced the \textit{Cube\&Conquer} paradigm. It generates many partial assignments, called \textit{cubes}, and randomly assigns them to workers. This makes it unlikely for any worker to run out of tasks.
 
 In this work, we focus on the second approach: so-called \textit{portfolio solvers}. In its simplest form, a portfolio solver runs multiple different independent serial SAT solvers in parallel. This simulates selecting the fastest solver from a portfolio by running the whole portfolio in parallel. In the SAT Competition of 2011, Roussel submitted such a na\"ive portfolio solver, called ppfolio \cite{ppfolio}, and achieved a close second place. One can argue, however, that since only one solver contributes to the solution, parallel resources are wasted. In the same vein, one can argue that no speedup can ever be achieved by such a solver.  There always exists a serial solver that can solve the problem at least as fast as a na\"ive portfolio solver. In practice this approach is also not scalable to massively parallel applications, since it would require a massive portfolio of solvers as well.
 
 Most modern parallel SAT solvers are portfolio solvers. However, they heavily employ a technique called \textit{clause sharing}, where solvers can share their derived conflict clauses. This technique was pioneered by Hamadi et al. in their solver ManySAT \cite{manySAT}. To combat the need for a diverse portfolio of many optimized serial SAT solvers, most portfolio solvers further diversify their solver engines. By running multiple instances of the same solver, with differing options, one can multiply their portfolio. On multiple occasions, such clause sharing portfolio solvers have achieved speedups, even when exclusively running the same solver as their solver engines -- without any diversification \cite{mallobSat, gimsatul}. This suggests that the nondeterministic nature of parallel clause sharing itself acts as a meaningful diversification technique.
+Furthermore, Schreiber et al. \cite{searchOnlyPaper} found it beneficial to deactivate pre- and inprocessing procedures in their solver engines on large scale parallel SAT solving. Their data shows that the percentage of time spent on pre- and inprocessing procedures increases for parallel solvers while the benefits of such procedures often remain constant. They also find LBDs to be an impractical metric for clause sharing operations.
 
 There have been some advances in the field of distributed SAT solving, such as the early GridSAT by Chrabakh and Woski \cite{chrabakh2003gridsat}, or Schubert et al.'s PaMiraXT \cite{schubert2010pamiraxt} for multicored workstations. Since 2020, the SAT Competition has included a cloud track to showcase massively parallel distributed SAT solvers. This track has continuously been dominated by variations of Schreiber and Sander's MallobSat. Since this solver is of particular interest to this work, we describe it in more detail hereafter.
 
 \subsubsection{MallobSat}
 
-MallobSat \cite{mallobSat} is a massively parallel SAT solver that categorizes itself as a clause-sharing solver rather than the more common term 'portfolio solver'. This comes from the realization, that MallobSat remains scalable even without directly diversifying its solver engines -- that is to say the only differences between the solver engine's executions are the timing, at which they import clauses. Suggesting the clause sharing to play an even bigger role than the portfolio itself. MallobSat follows a paradigm of treating solver engines as blackbox serial SAT solvers. In this section we want to give a broad overview over MallobSat's architecture and only describe the systems that we had to adapt in more detail. A complete record of MallobSat's inner workings can be found in a dedicated article by Schreiber and Sanders \cite{mallobSat}.
+MallobSat \cite{mallobSat} is a massively parallel SAT solver that categorizes itself as a clause-sharing solver rather than the more common term 'portfolio solver'. This comes from the realization that MallobSat remains scalable even without directly diversifying its solver engines -- that is to say the only differences between the solver engine's executions are the timing, at which they import clauses. Suggesting the clause sharing to play an even bigger role than the portfolio itself. MallobSat follows a paradigm of treating solver engines as blackbox serial SAT solvers. In this section we want to give a broad overview over MallobSat's architecture and only describe the systems that we had to adapt in more detail. A complete record of MallobSat's inner workings can be found in a dedicated article by Schreiber and Sanders \cite{mallobSat}.
 
 On an abstract view MallobSat combines existing serial SAT solvers into a massively parallel distributed and malleable SAT solver system by implementing a Clause sharing interface and the necessary infrastructure to manage and exchange derived clauses between these so-called solver engines. It accomplishes this by grouping solver engines into processes and creating a clause sharing system for these processes on top. This system is depicted in Figure \ref{fig:architectureMallob}.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \includegraphics[scale=.8]{figures/mallob_architecture.pdf}
   \caption{MallobSat's process architecture. Arrows depict clause transfers. This depiction is inspired by Schreiber and Sanders' original depiction \cite{mallobSat}.}
@@ -313,10 +323,11 @@ MallobSat equips each process with a fixed maximum size import buffer for each o
 
 Clause sharing from the perspective of a solver engine inside a process happens asynchronously: If a solver engine has deduced a clause it sees fit to be shared, the engine simply executes a callback method provided by MallobSat at any time. If a a solver engine is ready to import external clauses (usually when restarting) it can iterate through its dedicated import buffer and import clauses from there. Usually an engine then has to do some filtering of its own, e.g. not to import clauses containing literals the engine already eliminated. Engines also need to shorten clauses even more, if it already falsified some literals contained in the newly imported clause.
 
-To keep the communication volume as low as possible and to ensure important clauses are not lost to overflowing buffers, MallobSat employs some highly sophisticated filtering mechanisms for clauses that are imported and exported by solver engines. In particular these mechanisms prevent clauses from being mirrored back to the solver engine that produced them. They also prevent clauses from being imported by a solver engine multiple times, by filtering out any clauses that entered a solver engine's import buffer in the last $z$ epochs. The parameter $z$ is user-defined. Clauses are not indefinitely kept from being imported multiple times, since solvers tend to "forget" clauses regularly. This allows solver engines relearn important clauses after some time. We treat these filter mechanisms as blackboxes going forward. Like we mentiond earlier in this section, the interested reader is referred to the detailed description by Schreiber and Sanders in their dedicated article \cite{mallobSat}.
+To keep the communication volume as low as possible and to ensure important clauses are not lost to overflowing buffers, MallobSat employs some highly sophisticated filtering mechanisms for clauses that are imported and exported by solver engines. In particular these mechanisms prevent clauses from being mirrored back to the solver engine that produced them. They also prevent clauses from being imported by a solver engine multiple times by filtering out any clauses that entered a solver engine's import buffer in the last $z$ epochs. The parameter $z$ is user-defined. Clauses are not indefinitely kept from being imported multiple times, since solvers tend to forget clauses regularly. This allows solver engines relearn important clauses after some time. We treat these filter mechanisms as blackboxes going forward. Like we mentiond earlier in this section, the interested reader is referred to the detailed description by Schreiber and Sanders in their dedicated article \cite{mallobSat}.
 
 \subsubsection{Memory Efficient SAT-Solving}
 
+% TODO: in MA-5-1 there are some tildes?
 Most research in SAT solving focuses on optimizing a solver's runtime for general-purpose SAT solving or specific use cases. With all the advancements over the past years, especially in parallel SAT solving, it has become feasible to solve ever more complex SAT problems and larger instances. However, this progress brings us to a point, where the memory consumption of a solver might become a bottleneck for its performance. Clause sharing portfolio solvers typically have their solver engines manage their clauses independently -- thus storing multiple copies of their clauses. Currently, there is little research on this frontier, other than pre- and inprocessing techniques reducing a CNF's size. Iser et al. addressed this problem, by adapting the portfolio solver Candy, to utilize a shared clause database \cite{iser2019memory}. Fleury and Biere approached the problem with their solver Gimsatul \cite{gimsatul}, by sharing clauses using a true shared memory approach -- storing only a single copy for every clause and merely exchanging pointers to clauses. Since Gimsatul is of particular interest to this work, we describe it in more detail below. Gimsatul's shared memory architecture makes it inherently unsuitable to be executed in distributed environments such as HPC-clusters, however. Iser et al. also evaluated their approach on only up to 16 cores, leaving massively parallel applications out of the question.
 
 TODO: compression of cnfs
@@ -329,7 +340,7 @@ Gimsatul achieves its shared memory approach for clauses by only sharing pointer
 
 We do want to describe Gimsatul's clause sharing mechanisms in more detail however, since this will become important later on. The process is depicted in Figure \ref{fig:architectureGimsatul}. If a ring derives a clause it deems worthy to share (i.e., a clause with a low glucose level) it will store a reference to this clause inside a buffer of small constant size for each other ring. If a buffer is full, it will overwrite the clause with the highest glucose level in the buffer. If all clauses in the buffer have a lower glucose level than the currently exported clause, it will not be inserted. When a ring decides to import a clause, it will pick another ring at random and import the clause with the lowest glucose level in it's respective buffer -- Deleting the clause from the buffer in the process.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \includegraphics[]{figures/gimsatul_architecture.pdf}
   \caption{Gimsatul's clause sharing architecture for an examplary instance with 3 rings. This depiction is inspired by Fleury and Biere's original depiction \cite{gimsatul}.}
@@ -340,7 +351,9 @@ To diversify the rings, Gimsatul utilizes differing strategies for the first loc
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\newpage
 \section{Approach}
+\label{sec:approach}
 
 In this section we want to introduce MallobSat and Gimsatul, the core building blocks of our work. We integrated Gimsatul into MallobSat as a Solver backend to utilize both Gimsatul's memory efficiency, achieved by shared memory clause sharing, and MallobSat's massively parallel scalability. We also want to describe the architecture we used to make it possible to use the already parallel SAT solver Gimsatul as a solver backend in MallobSat.
 
@@ -353,7 +366,7 @@ First off, Gimsatul is initialized by reading the original CNF Formula of a give
 
 For the aforementioned reasons we decided to implement a preferable architecture, shown in Figure \ref{fig:architecture}: We adapted Gimsatul to be a single solver engine in MallobSat, thus avoiding the initialization problems with Gimsatul. Furthermore, MallobSat's clause sharing and filtering avoid mirroring clauses to the solver engine they originate from -- thereby elegantly preventing redundant clause sharing between rings of the same Gimsatul instance.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \includegraphics[scale=.8]{figures/architecture.pdf}
   \caption{Architecture integrating Gimsatul into MallobSat as a solver engine. Arrows depict clause transfers (or the transfer of references between rings).}
@@ -385,12 +398,12 @@ Importing external clauses into Gimsatul turned out to be a bit more complex tho
 
 To make it possible for every ring to read the import buffer independently we would have had to redesign both MallobSat's import buffers, and Gimsatul's clause lifecycle. The import buffers would need some functionality to keep track of which rings had already read which clauses. And Gimsatul's rings would have needed some functionality to import only the reference to a clause, if it had already been imported into the shared memory by another ring. 
 
-\subsubsection{Single dedicated importing ring.}
+\subsubsection{Single Dedicated Importing Ring}
 \label{sec:singleDedicatedImportRing}
 
 Having a dedicated ring to import all clauses from the import buffer whenever it does a restart left the challenge of spreading the imported external clauses through all of Gimsatul's rings. This approach already resulted in some scalability improvements over vanilla Gimsatul. However, since Gimsatul's internal clause sharing utilizes buffers of extremely limited size, importing the full import buffer from MallobSat all at once, and immediately exporting them internally in Gimsatul, would discard many of the external due to internal buffer overflows.
 
-\subsubsection{Our approach.}
+\subsubsection{Our Approach}
 \label{sec:ourApproach}
 
 We combined the aforementioned approaches to spread externally imported clauses throughout Gimsatul's rings without having to import an external clause multiple times by letting each ring exclusively import a small set of clauses from MallobSat's import buffer: 
@@ -399,8 +412,6 @@ When a ring is importing external clauses they are handled as if they were deduc
 
 \textbf{Minimum Free Slots.} Before importing external clauses, a ring checks all its internal export buffers, to find the one with the fewest free slots. This minimum is then used as the limit on importing external clauses.
 This strategy does not result in the loss of any external clauses through overflowing buffers. It can, however, result in external clauses not being imported at all in this importing call, if at least one internal export buffer is full.
-%To avoid overflowing Gimsatul's internal export buffers, it only ever imports at most a small constant number of clauses at once.
-%a ring checks all of said export buffers for free slots before importing. It then only imports at most so many external clauses, that no overflows occur. For example: If we run a Gimsatul instance with 3 rings as a solver engine in MallobSat and ring 0 tries to import some external clauses it will check its export buffers for ring 1 and 2 and might find them to have 4 and 6 free slots respectively. It will then import at most 4 clauses from MallobSat's import buffer.
 
 \textbf{Secondary Minimum Free Slots.} Like the first strategy, a ring will check all its internal export buffers. It will however, take the second to fewest free slots as the limit for importing external clauses. This strategy avoids a single full buffer from blocking the import operation.
 
@@ -416,12 +427,14 @@ In our experiments we found the three strategies \textit{Mean Free Slots}, \text
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\newpage
 \section{Experimental Evaluation}
+\label{sec:expEval}
 
 In this section, we want to discuss the findings of the experimental results of our approach. All experiments in this section were conducted on the SuperMUC-NG cluster at the \textit{Leibniz-Rechenzentrum} \cite{superMUC}. It is equipped with Intel Skylake Xeon Platinum 8174 processors clocked at 2.7 GHz. We evaluated our approach on up to 16 of the SuperMUC-NG's thin nodes, each containing 48 cores (96 hardware threads) with 96 GB memory. The SuperMUC-NG cluster runs on SUSE Linux (SLES) and connects its nodes via OmniPath \cite{omniPath}.
 
 \subsection{Benchmarks}
-To evaluate our algorithm, we used benchmark instances provided by Iser and Jabs on their Global Benchmark Database \cite{benchmarkDB}. Specifically, we used the 400 instances contained in the track \textit{main\_2024}, which was used in the 2024 SAT Competition \cite{satComp2024}. It is comprised of a myriad of different problems encoded as SAT instances.
+To evaluate our algorithm, we used benchmark instances provided by Iser and Jabs on their Global Benchmark Database \cite{benchmarkDB}. Specifically, we used the 400 instances contained in the track \textit{main\_2024}, which was used in the 2024 SAT Competition \cite{satComp2024}. It is comprised of a variety of different problems encoded as SAT instances.
 
 \subsection{Configuration}
 We ran our approach with one Gimsatul instance per node, i.e., 48 threads in one shared memory instance. Running multiple Gimsatul instances on the same node proved to yield comparable, or worse, results to only a single instance per node -- with a significant increase in memory costs. Using the node's capability of hyperthreading to exploit all 96 hardware threads in a single Gimsatul instance was not supported by MallobSat on the SuperMUC-NG cluster. We would not expect an increase in performance in this case regardless. In all cases, the configurations utilizing all 96 hardware threads performed worse than their counterparts, utilizing only the 48 cores. Figure \ref{fig:1nodeConfigCompare} shows our results for all the thread configurations we tested on one node. To save on computing time, we reason that the best configuration for a single node will also perform the best across multiple nodes. To reinforce this argument, we ran the best two configurations for one node on 2 compute nodes, as shown in Figure \ref{fig:2nodeConfigCompare}. In the following, we will denote the two configurations as follows:
@@ -432,14 +445,14 @@ We ran our approach with one Gimsatul instance per node, i.e., 48 threads in one
 
 In our experiments, configuration $B$ solved 10 benchmark instances that configuration $A$ did not solve within a $300\,$s time limit. Of these 10 instances, 7 were satisfiable, and thus some of them may be attributed to lucky non-determinism. Configuration $A$ solved 5 instances that configuration $B$ could not solve within the time limit. Of these 5 instances, 3 were satisfiable. We opted for the configuration $A$ regardless -- mainly due to its significantly reduced memory consumption as shown in Figure \ref{fig:2nodeConfigMemCompare}.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \includegraphics[scale=.5]{plots/config_compare/1node_config_compare.pdf}
   \caption{Comparison between thread configurations on a single node.}
   \label{fig:1nodeConfigCompare}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{0.45\textwidth}
     \center
@@ -458,7 +471,15 @@ In our experiments, configuration $B$ solved 10 benchmark instances that configu
   \label{fig:2nodeConfigCompare}
 \end{figure}
 
-To further configure MallobSat's options, we implemented a search-only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this, we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e., no simplification or probing. For Gimsatul this has the additional effect of avoiding synchronization between all rings of a Gimsatul instance. This increases memory consumption due to missing compacting procedures but avoids idling rings while waiting for other rings to synchronize. To preprocess the formula, we utilized the Kissat SAT solver \cite{kissat}. In preliminary experiments, we found a significant increase in performance due to this practice and therefore employ it throughout all of our experiments. As the import strategy (as discussed in Section \ref{sec:ourApproach}), we chose the \textit{Amount of Rings} strategy, since it performed best in testing.
+To further configure MallobSat's options, we implemented a search-only approach with only a single preprocessor as introduced by Schreiber et al. \cite{searchOnlyPaper}. To do this, we deactivated all pre- and inprocessing procedures in our Gimsatul instances, i.e., no simplification or probing. For Gimsatul this has the additional effect of avoiding synchronization between all rings of a Gimsatul instance. This increases memory consumption due to missing compacting procedures but avoids idling rings while waiting for other rings to synchronize. To preprocess the formula, we utilized the Kissat SAT solver \cite{kissat}.
+We found a significant increase in performance due to this practice and therefore employ it throughout all of our experiments. The comparison between our search-only option and the activated pre- and inprocessing is shown in Figure \ref{fig:searchOnlyBoost}. Our search-only option solves 28 more instances within our time limit of 300 seconds. For our import strategy (as discussed in Section \ref{sec:ourApproach}), we chose the \textit{Amount of Rings} strategy, since it performed best in testing.
+
+\begin{figure}[!h]
+  \center
+  \includegraphics[scale=.45]{plots/config_compare/search_only_compare.pdf}
+  \caption{Comparison between search-only approach and pre- and inprocessing enabled. Executed on 2 nodes (96 cores).}
+  \label{fig:searchOnlyBoost}
+\end{figure}
 
 \subsection{Runtime and Memory Usage}
 
@@ -468,7 +489,7 @@ First, we to discuss our findings on runtime with respect to scalability on up t
 
 As shown in Figure \ref{fig:runtimeCompareGim}, we ran our algorithm on 1, 2, 4, 8, and 16 nodes respectively. We can see an increase in performance with an increasing amount of available processing power, albeit with diminishing returns.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
     \center
@@ -489,14 +510,14 @@ As shown in Figure \ref{fig:runtimeCompareGim}, we ran our algorithm on 1, 2, 4,
 
 To calculate speedups, we ran the sate of the art serial SAT solver Kissat \cite{kissat} for up to 3000 s on a single core. The results of this run are shown in Figure \ref{fig:runtimeSerial}. The geometric means of all speedups for benchmark instances solved by Kissat are shown in Table \ref{tab:speedups}. For most families, we see an increase in the geometric mean speedup for our approach with increasing numbers of cores. The specific speedups, for all instances that were solved by Kissat within the 3000 s time limit, are shown in Figure \ref{fig:speedups}. Here we observe a significant variation in speedups for simple instances (i.e., instances Kissat solved in under 500 seconds). For complex instances (i.e., instances where Kissat needed more than 500 seconds), we see a tendency for the speedups to become greater. For very complex instances the speedups routinely beat the geometric mean while their variance increases even more.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
-  \includegraphics[scale=.5]{plots/cumulative_runtime/scalability_serial.pdf}
+  \includegraphics[scale=.45]{plots/cumulative_runtime/scalability_serial.pdf}
   \caption{Scalability of serial Kissat}
   \label{fig:runtimeSerial}
 \end{figure}
 
-\begin{table}
+\begin{table}[!h]
   \center
   \begin{tabular}{ cccc }
     \toprule
@@ -507,16 +528,16 @@ To calculate speedups, we ran the sate of the art serial SAT solver Kissat \cite
     2  & 96  & 7.384    & -\\
     4  & 192 & 8.146    & 14.034\\
     8  & 384 & 9.720    & -\\
-    16 & 762 & 10.260   & 20.073\\
+    16 & 768 & 10.260   & 20.073\\
     \bottomrule
   \end{tabular}
   \caption{Geometric mean speedups for number of processors}
   \label{tab:speedups}
 \end{table}
 
-\begin{figure}
+\begin{figure}[!h]
   \center
-  \includegraphics{plots/speedups_gim.pdf}
+  \includegraphics[scale=.45]{plots/speedups_gim.pdf}
   \caption{Speedups of our Algorithm. Per instance on the left, accumulated on the right.}
   \label{fig:speedups}
 \end{figure}
@@ -543,7 +564,7 @@ We find the highest geometric mean speedups, for any significant family, for a f
 
 Instances of the family \textit{minimum-disagreement-parity} \cite{satComp2022}, encode the Minimum Disagreement Parity (MDP) problem, which is of interest to the cryptography community and results in challenging SAT problems. This is underlined by the small size of these instances: The largest one contains only 1021 variables, with the slowest solved by Kissat taking $2617.82\,$s and containing only 750 variables. This family comprises of 3 satisfiable, and 3 unsatisfiable instances. Our high geometric mean speedups of over 22 suggest that the MDP problem instances benefit from the increased processing power of parallel sat solving far more than other kinds of problems.
 
-\begin{table}
+\begin{table}[!h]
   \center
   \begin{tabular}{ lcccccc }
     \toprule
@@ -580,9 +601,28 @@ Instances of the family \textit{minimum-disagreement-parity} \cite{satComp2022},
 
 In the following, we denote benchmark instances that have been solved by all solvers in a given context as \textit{solved instances}. Conversely, we denote instances that have not been solved by at least one solver in a given context as \textit{unsolved or partially solved instances}.
 
+We evaluated the \textit{penalized average runtime (PAR-2)} score, as it was used in the SAT competition \cite{satCompWebsite} of 2024 to evaluate submitted solvers. It is calculated by taking the weighted average runtime over all instances, with unsolved instances included at a penalty of twice the time limit. The PAR-2 scores for MallobSat and our approach, for our time limit of 300 seconds, are listed in Table \ref{tab:par2}. They are, however, not directly comparable to the results of the SAT competition, since the competition used a much larger time limit of 5000 seconds. The PAR-2 scores of our approach improve with an increasing number of cores from 234.199 for 48 cores down to 176.129 for 768 cores.
+
+\begin{table}[!h]
+  \center
+  \begin{tabular}{ cccccc }
+    \toprule
+    \#nodes & \#cores & Our Algorithm & MallobSat\\
+    \midrule
+    1  & 48  & 234.199 & 180.828\\
+    2  & 96  & 210.472 & -\\
+    4  & 192 & 195.101 & 138.580\\
+    8  & 384 & 184.218 & -\\
+    16 & 768 & 176.129 & 114.086\\
+    \bottomrule
+  \end{tabular}
+  \caption{PAR-2 scores for a time limit of 300 seconds.}
+  \label{tab:par2}
+\end{table}
+
 Figure \ref{fig:runtimeCompare} shows the compared runtimes of solved instances for Mallob on the x-axis and our approach on the y-axis. We differentiate between satisfiable and unsatisfiable instances. While the satisfiable instances show a wider variance than the unsatisfiable ones, it is clear that our approach sacrifices runtime efficiency for memory efficiency. Especially for complex instances, we observe a clear tendency for our algorithm to take up to an order of magnitude more time.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
     \center
@@ -608,7 +648,7 @@ Figure \ref{fig:runtimeCompare} shows the compared runtimes of solved instances 
 
 Figure \ref{fig:memCompare} shows the comparison between our approach's and MallobSat's memory consumption in a similar manner: with MallobSat's peak memory consumption on the x-axis and the peak memory consumption of our approach on the y-axis. Again, we differentiate between satisfiable and unsatisfiable instances. Here, we clearly see our approach consuming less -- in extreme cases, more than an order of magnitude less -- memory than MallobSat.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
     \center
@@ -634,7 +674,7 @@ Figure \ref{fig:memCompare} shows the comparison between our approach's and Mall
 
 The exact memory consumption of our approach, as well as MallobSat's, is shown in Figure \ref{fig:memAbsVars}. The mean memory consumptions across all instances are shown in Table \ref{tab:memMean}. For solved instances, we find the ratio between MallobSat's mean memory consumption and that of our approach to be $1.836$ for 1 node, $1.881$ for 4 nodes, and $1.883$ for 16 nodes. For all instances, we find the ratios to be slightly smaller on multiple nodes: $1.893$ for 1 node, $1.655$ for 4 nodes, and $1.722$ for 16 nodes.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
     \center
@@ -655,7 +695,7 @@ The exact memory consumption of our approach, as well as MallobSat's, is shown i
   \label{fig:memAbsVars}
 \end{figure}
 
-\begin{table}
+\begin{table}[!h]
   \center
   \begin{tabular}{ cccccc }
     \toprule
@@ -666,7 +706,7 @@ The exact memory consumption of our approach, as well as MallobSat's, is shown i
     2  & 96  & 7.159  & -       & 9.301   & -\\
     4  & 192 & 13.628 & 25.631  & 18.686  & 30.921\\
     8  & 384 & 27.357 & -       & 37.176  & -\\
-    16 & 762 & 56.563 & 106.534 & 75.725 & 130.425\\
+    16 & 768 & 56.563 & 106.534 & 75.725 & 130.425\\
     \bottomrule
   \end{tabular}
   \caption{Mean memory consumption in GB for number of processors}
@@ -685,7 +725,7 @@ In the top left corner of Figure \ref{fig:memRatiosVars1node} we can see five in
 
 TODO: more outlier discussion in plots?
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
     \center
@@ -709,7 +749,7 @@ TODO: more outlier discussion in plots?
   \label{fig:memRatiosVars}
 \end{figure}
 
-\begin{table}
+\begin{table}[!h]
   \center
   \begin{tabular}{ ccc }
     \toprule
@@ -717,7 +757,7 @@ TODO: more outlier discussion in plots?
     \midrule
     1  & 48  & 3.864\\
     4  & 192 & 4.288\\
-    16 & 762 & 4.916\\
+    16 & 768 & 4.916\\
     \bottomrule
   \end{tabular}
   \caption{Exact values of the 75th percentile for the ratios of peak memory consumption between MallobSat and our approach, as described in section \ref{sec:peakMemRatios}}
@@ -725,14 +765,14 @@ TODO: more outlier discussion in plots?
 \end{table}
 
 \label{sec:GMs}
-Up to this point, we have only discussed peak memory consumption. We now take a closer look at the relative memory consumption of our approach throughout the course of calculation. To give an overview, we calculated the relative memory consumption between MallobSat and our approach for each second, that both solvers were active. For example, if MallobSat finished its execution after 30s and our algorithm finished after 35s, we calculated the ratio between MallobSat's memory consumption and our approach's memory consumption for every second of the first 30 seconds. This way, we only compare their memory consumption during runtime. Figure \ref{fig:memGmVars} shows the geometric means of these calculated ratios. We mark the geometric mean of all data points with a black line. The exact geometric means for each subplot are given in Table \ref{tab:memGM}.
-We clearly see that all data points are well below one -- showing that our approach uses less (geometric mean) memory than MallobSat during the same runtime. We also observe that the densest areas, across all configurations, are around the respective geometric means of all data points. These geometric means shrink slightly with the number of used cores: from 0.282 for 48 nodes, over 0.256 for 192, and down to 0.216 for our maximum of 762 nodes.
+Up to this point, we have only discussed peak memory consumption. We now take a closer look at the relative memory consumption of our approach throughout the course of calculation. To give an overview, we calculated the relative memory consumption between MallobSat and our approach for each second that both solvers were active. For example, if MallobSat finished its execution after 30s and our algorithm finished after 35s, we calculated the ratio between MallobSat's memory consumption and our approach's memory consumption for every second of the first 30 seconds. This way, we only compare their memory consumption during runtime. Figure \ref{fig:memGmVars} shows the geometric means of these calculated ratios. We mark the geometric mean of all data points with a black line. The exact geometric means for each subplot are given in Table \ref{tab:memGM}.
+We clearly see that all data points are well below one -- showing that our approach uses less (geometric mean) memory than MallobSat during the same runtime. We also observe that the densest areas, across all configurations, are around the respective geometric means of all data points. These geometric means shrink slightly with the number of used cores: from 0.282 for 48 nodes, over 0.256 for 192, and down to 0.216 for our maximum of 768 nodes.
 All instances above $10^7$ variables encode so-called \textit{miters}. Miters encode two circuits to prove or disprove their equivalence via SAT solvers. We observe for all 14 of these fairly big instances that our approach's relative memory consumption, in relation to MallobSat, is noticeable shrinking with increasing numbers of cores.
 
 % There are two instances on the top right, where our approach does not have a big advantage. No parallel sover solved these instances while serial Kissat solved them fairly easily...
 % Names: oisc-subrv-sll-nested-13.cnf, oisc-subrv-sll-nested-11.cnf
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
     \center
@@ -753,7 +793,7 @@ All instances above $10^7$ variables encode so-called \textit{miters}. Miters en
   \label{fig:memGmVars}
 \end{figure}
 
-\begin{table}
+\begin{table}[!h]
   \center
   \begin{tabular}{ ccc }
     \toprule
@@ -761,7 +801,7 @@ All instances above $10^7$ variables encode so-called \textit{miters}. Miters en
     \midrule
     1  & 48  & 0.282\\
     4  & 192 & 0.256\\
-    16 & 762 & 0.216\\
+    16 & 768 & 0.216\\
     \bottomrule
   \end{tabular}
   \caption{Geometric Means of the data points in Figure \ref{fig:memGmVars}. Calculated as described in section \ref{sec:GMs}.}
@@ -772,7 +812,7 @@ Figure \ref{fig:memRatiosSecs} shows the ratios between MallobSat and our approa
 First of all, we observe that for almost all instances the lines stay below a ratio of one. This indicates a systematic reduction in memory consumption for our approach, in comparison to MallobSat, during all stages of solving.
 The second observation are the extreme jitters in some of our lines -- especially in the first few seconds of execution. We can explain this with a fairly simple effect of the search-only setting in our approach: At the beginning of the execution, we start a preprocessing thread in addition to the regular solving threads. This thread solely executes the preprocessing techniques implemented in Kissat. After the preprocessing is finished, the solver threads that are already running on the unprocessed instance, are gradually replaced by threads solving the preprocessed version of the problem formula. Since we collect a memory status every second, it is possible get measurements while a thread is being restarted. An offset of one second between the two compared solvers, results in an extreme discrepancy in memory consumption -- thus causing the extreme jitters in our plots.
 
-\begin{figure}
+\begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
     \center
@@ -793,28 +833,28 @@ The second observation are the extreme jitters in some of our lines -- especiall
   \label{fig:memRatiosSecs}
 \end{figure}
 
-% PAR-2 scores
-% 1node_kis PAR-2: 180.82767644332498
-% 1node_1p_48t PAR-2: 234.1985425415617
-% 2node_1p_48t PAR-2: 210.472996790932
-% 4node_kis PAR-2: 138.579572395466
-% 4node_1p_48t PAR-2: 195.10140574811084
-% 8node_1p_48t PAR-2: 184.21757448110833
-% 16node_kis PAR-2: 114.08647329722923
-% 16node_1p_48t PAR-2: 176.12921210075567
-% Serial PAR-2: 1159.7390428211588
+\subsection{LBDs in Clause Sharing}
+
+Schreiber et al. \cite{searchOnlyPaper} found LBDs to be an impractical metric for clause sharing operations. They support this claim, in part, by running MallobSat with artificial LBDs for shared clauses. More precisely, the LBDs are either set to the maximum (i.e., the clause length) or drawn from a random distribution (uniform or triangular). They find, setting the LBDs to their maximum for every clause performs similar to the original LBDs. Both the uniform and triangular distributions perform slightly worse.
+
+We were able to reproduce these findings, with our configuration that runs only Gimsatul as solver engines in MallobSat. This further strengthens the notion that LBDs do not constitute a meaningful metric when deciding which clauses to share.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\clearpage
+\newpage
 \section{Conclusion}
+\label{sec:conclusion}
 
-Our approach cannot compare to MallobSat's scalability. MallobSat consistently solves more instances on the same number of cores. On 16 nodes (768 cores), MallobSat solved 28 instances more and achieved a geometric mean speedup of 20.073, compared to our geometric mean speedup of 10.26. We do, however, see a consistent improvement in runtime with increasing numbers of cores in our approach -- especially on more complex instances. This is also reflected in the geometric mean speedups, which grow with the number of cores. The differences become especially apparent for unsatisfiable instances. MallobSat solved 27 unsatisfiable instances that our approach could not solve, while our approach solved only one unsatisfiable instance that MallobSat could not.
+In this work we integrate Gimsatul as a solver engine into the state of the art distributed SAT solver MallobSat, to bring Gimsatul's memory efficiency to a distributed scale. We evaluate our approach in deth on up to 768 cores and find its performance to improve with an increasing numbers of cores.
 
-Our approach does succeed in its goal to reduce memory consumption. In Section \ref{sec:compare}, we discuss a reduction in memory consumption per instance -- both solved and unsolved. We also show direct comparisons between the memory usage of our approach and that of MallobSat, both in absolute and relative values. Table \ref{tab:memGM} shows the geometric mean of the ratios between MallobSat's memory consumption and that of our approach, ranging from 0.216 to 0.282 -- depending on the number of cores used. The geometric mean of all these geometric means evaluates to 0.25. While this value alone cannot encapsulate the full complexity of our memory efficiency, it indicates an overall improvement in memory efficiency when compared to MallobSat. Furthermore, Figure \ref{fig:memRatiosSecs} shows that our improved memory efficiency does not only apply to maximum memory peaks, but also throughout all stages of solving.
+In our direct comparison to MallobSat's default configuration we find our approach to succeed in its stated goal to reduce memory consumption. In Section \ref{sec:compare}, we discuss a reduction in memory consumption per instance -- both solved and unsolved. We also show direct comparisons between the memory usage of our approach and that of MallobSat, both in absolute and relative values. Table \ref{tab:memGM} shows the geometric mean of the ratios between MallobSat's memory consumption and that of our approach, ranging from 0.216 to 0.282 -- depending on the number of cores used. The geometric mean of all these geometric means evaluates to 0.25. While this value alone cannot encapsulate the full complexity of our memory efficiency, it indicates an overall improvement in memory efficiency when compared to MallobSat. Furthermore, Figure \ref{fig:memRatiosSecs} shows that our improved memory efficiency does not only apply to maximum memory peaks, but also throughout all stages of solving.
 
-Table \ref{tab:solvedPerGB} shows both the ratio of solved instances per overall memory used, and the ratio of solved instances per memory usage normalized by the number of cores. While MallobSat solves between 4.256 and 5.036 instances per GB of memory per core, our approach solves between 7.140 and 7.780.
+Our approach's memory efficiency does not come without its drawbacks however. MallobSat consistently solves more instances on the same number of cores. On 16 nodes (768 cores), MallobSat solved 28 instances more and achieved a geometric mean speedup of 20.073, compared to our geometric mean speedup of 10.26. We do see a consistent improvement in runtime with increasing numbers of cores in our approach -- especially on more complex instances. This is also reflected in the geometric mean speedups, which grow with the number of cores. Our tradeoff between memory efficiency and runtime becomes especially apparent for unsatisfiable instances. MallobSat solves 27 unsatisfiable instances that our approach could not solve, while our approach solved only one unsatisfiable instance that MallobSat could not.
 
-\begin{table}
+Table \ref{tab:solvedPerGB} shows both the ratio of solved instances per overall memory used, and the ratio of solved instances per memory usage normalized by the number of cores. While MallobSat solves between 4.256 and 5.036 instances per GB of memory per core, our approach solves between 7.140 and 7.780 -- more that 2.5 instances more per GB of used memory per core.
+
+\begin{table}[!h]
   \center
   \begin{tabular}{ cccccc }
     \toprule
@@ -825,14 +865,14 @@ Table \ref{tab:solvedPerGB} shows both the ratio of solved instances per overall
     2  & 96  & 0.076 & -     & 7.306 & -\\
     4  & 192 & 0.039 & 0.026 & 7.583 & 5.036\\
     8  & 384 & 0.020 & -     & 7.780 & -\\
-    16 & 762 & 0.010 & 0.006 & 7.766 & 4.924\\
+    16 & 768 & 0.010 & 0.006 & 7.766 & 4.924\\
     \bottomrule
   \end{tabular}
   \caption{Solved instances per GB of overall used memory in the middle and the same values normalized by the number of cores}
   \label{tab:solvedPerGB}
 \end{table}
 
-We thus conclude that our approach is applicable if memory efficiency per core is a greater concern than overall runtime. 
+We thus conclude that our approach is appealing if memory efficiency per core is a greater concern than overall runtime. 
 
 \subsection{Future Work}
 
@@ -922,33 +962,6 @@ In the future, we would like to extend our experiments to comprise more complex 
   \caption{Speedups per family and Solver Setup}
   \label{tab:speedupsFamiliesComplete}
 \end{longtable}
-
-\section{PAR-2 Scores}
-
-We evaluated the \textit{penalized average runtime (PAR-2)} score, as it was used in the SAT competition \cite{satCompWebsite} of 2024 to evaluate submitted solvers. It is calculated by taking the weighted average runtime over all instances, with unsolved instances included at a penalty of twice the time limit. The PAR-2 scores for MallobSat and our approach, for our time limit of 300 seconds, are listed in Table \ref{tab:par2}. They are, however, not directly comparable to the results of the SAT competition, since the competition used a much larger time limit of 5000 seconds.
-
-\begin{table}[h]
-  \center
-  \begin{tabular}{ cccccc }
-    \toprule
-    \#nodes & \#cores & Our Algorithm & MallobSat\\
-    \midrule
-    1  & 48  & 234.199 & 180.828\\
-    2  & 96  & 210.472 & -\\
-    4  & 192 & 195.101 & 138.580\\
-    8  & 384 & 184.218 & -\\
-    16 & 762 & 176.129 & 114.086\\
-    \bottomrule
-  \end{tabular}
-  \caption{PAR-2 scores for a time limit of 300 seconds.}
-  \label{tab:par2}
-\end{table}
-
-\section{LBDs in Clause sharing}
-
-Schreiber et al. \cite{searchOnlyPaper} found LBDs to be an impractical metric for clause sharing operations. They support this claim, in part, by running MallobSat with artificial LBDs for shared clauses. More precisely, the LBDs are either set to the maximum (i.e., the clause length) or drawn from a random distribution (uniform or triangular). They find, setting the LBDs to their maximum for every clause performs similar to the original LBDs. Both the uniform and triangular distributions perform slightly worse.
-
-We were able to reproduce these findings, with our configuration, that runs only Gimsatul as solver engines in MallobSat. This further strengthens the notion that LBDs do not constitute a meaningful metric when deciding which clauses to share.
 
 \bibliographystyle{eptcs}
 \bibliography{literatur}
