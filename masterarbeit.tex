@@ -720,7 +720,6 @@ In the top left corner of Figure \ref{fig:memRatiosVars1node} we can see five in
 
 Using 16 nodes, we observe three solved instances with more than $10^6$ variables and memory ratios of more than 24 in Figure \ref{fig:memRatiosVars16node}. The same three instances have memory ratios of more than 19 for 4 nodes and more than 12 for 1 node. In Figures \ref{fig:memRatiosVars1node} and \ref{fig:memRatiosVars4node}, two of these instances appear as a single data point. All three of these instances encode miters for circuits that were used in the \textit{Hardware Model Checking Competition} over the past years. They are part of a group of that were submitted to the SAT competition 2024, to showcase Kissat's \textit{clausal congruence closure} pre- and inprocessing technique \cite{satComp2024, biere2024clausal}. There are a total of 10 such instances in our benchmark set. Our approach consistently outperformed MallbSat on all these instances, both in terms of runtime and memory efficiency.
 
-% TODO: make y-Axis readable
 \begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
@@ -764,10 +763,6 @@ Using 16 nodes, we observe three solved instances with more than $10^6$ variable
 Up to this point, we have only discussed peak memory consumption. We now take a closer look at the relative memory consumption of our approach throughout the course of calculation. To give an overview, we calculated the relative memory consumption between MallobSat and our approach for each second that both solvers were active. For example, if MallobSat finished its execution after 30s and our algorithm finished after 35s, we calculated the ratio between MallobSat's memory consumption and our approach's memory consumption for every second of the first 30 seconds. This way, we only compare their memory consumption during runtime. Figure \ref{fig:memGmVars} shows the geometric means of these calculated ratios. We mark the geometric mean of all data points with a black line. The exact geometric means for each subplot are given in Table \ref{tab:memGM}.
 We clearly see that all data points are well below one -- showing that our approach uses less (geometric mean) memory than MallobSat during the same runtime. We also observe that the densest areas, across all configurations, are around the respective geometric means of all data points. These geometric means shrink slightly with the number of used cores: from 0.282 for 48 nodes, over 0.256 for 192, and down to 0.216 for our maximum of 768 nodes. All instances above $10^7$ variables encode miters. We observe for all 14 of these fairly big instances that our approach's relative memory consumption, in relation to MallobSat, is noticeable shrinking with increasing numbers of cores.
 
-% There are two instances on the top right, where our approach does not have a big advantage. No parallel sover solved these instances while serial Kissat solved them fairly easily...
-% Names: oisc-subrv-sll-nested-13.cnf, oisc-subrv-sll-nested-11.cnf
-
-% TODO: x-axis is cropped
 \begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
