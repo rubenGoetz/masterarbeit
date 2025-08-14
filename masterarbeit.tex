@@ -644,7 +644,7 @@ Figure \ref{fig:runtimeCompare} shows the compared runtimes of solved instances 
   \label{fig:runtimeCompare}
 \end{figure}
 
-Figure \ref{fig:memCompare} shows the comparison between our approach's and MallobSat's memory consumption in a similar manner: with MallobSat's peak memory consumption on the x-axis and the peak memory consumption of our approach on the y-axis. Again, we differentiate between satisfiable and unsatisfiable instances. Here, we clearly see our approach consuming less -- in extreme cases, more than an order of magnitude less -- memory than MallobSat.
+Figure \ref{fig:memCompare} shows the comparison between our approach's and MallobSat's memory consumption in a similar manner: with MallobSat's peak memory consumption on the x-axis and the peak memory consumption of our approach on the y-axis. Again, we differentiate between satisfiable and unsatisfiable instances. Here, we clearly see our approach consuming less -- in extreme cases, more than an order of magnitude less -- memory than MallobSat. In Figure \ref{fig:memCompare16node}, we observe a single instance where our approach consumes significantly more memory than MallobSat. The corresponding benchmark encodes an instance of the \textit{Unit-Distance Strip Coloring} problem. Since this is the only such instance in our benchmark set and our approach solved the benchmark with less memory than MallobSat on one and four nodes, we consider this an outlier.
 
 \begin{figure}[!h]
   \center
@@ -718,8 +718,9 @@ We now take a more detailed look at the memory consumption ratios. Figure \ref{f
 
 In the top left corner of Figure \ref{fig:memRatiosVars1node} we can see five instances with memory ratios over 25. The unsolved instances all belong to a family of instances called \textit{tseitin-formulas} and encode, as the name suggests, Tseitin formulas. We use these instances as an example of an effect we observed multiple times in testing: Our approach appears to be more memory efficient on some unsolved instances. This phenomenon can be explained by the general behavior of SAT solvers to allocate memory over time. Since Gimsatul already sacrifices runtime efficiency for shared memory clause sharing, our approach might simply not be as far into solving a specific instance after $300\,$s than MallobSat is. We therefore cannot say that our approach is even more memory efficient in these scenarios, since by the time it solves the problem, it will have accumulated more memory.
 
-TODO: more outlier discussion in plots
+Using 16 nodes, we observe three solved instances with more than $10^6$ variables and memory ratios of more than 24 in Figure \ref{fig:memRatiosVars16node}. The same three instances have memory ratios of more than 19 for 4 nodes and more than 12 for 1 node. In Figures \ref{fig:memRatiosVars1node} and \ref{fig:memRatiosVars4node}, two of these instances appear as a single data point. All three of these instances encode miters for circuits that were used in the \textit{Hardware Model Checking Competition} over the past years. They are part of a group of that were submitted to the SAT competition 2024, to showcase Kissat's \textit{clausal congruence closure} pre- and inprocessing technique \cite{satComp2024, biere2024clausal}. There are a total of 10 such instances in our benchmark set. Our approach consistently outperformed MallbSat on all these instances, both in terms of runtime and memory efficiency.
 
+% TODO: make y-Axis readable
 \begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
@@ -766,6 +767,7 @@ We clearly see that all data points are well below one -- showing that our appro
 % There are two instances on the top right, where our approach does not have a big advantage. No parallel sover solved these instances while serial Kissat solved them fairly easily...
 % Names: oisc-subrv-sll-nested-13.cnf, oisc-subrv-sll-nested-11.cnf
 
+% TODO: x-axis is cropped
 \begin{figure}[!h]
   \center
   \begin{subfigure}[c]{.45\textwidth}
