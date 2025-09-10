@@ -1,0 +1,6 @@
+Sudoku:
+	https://s2.qwant.com/thumbr/474x474/4/8/b903370ab1a4ceff24f52efad68978d465661c12d3f55d57f5989e5d5ebb7e/OIP.xQtwwPMo5JC8fuXfPvsI9gHaHa.jpg?u=https%3A%2F%2Ftse.mm.bing.net%2Fth%2Fid%2FOIP.xQtwwPMo5JC8fuXfPvsI9gHaHa%3Fpid%3DApi&q=0&b=1&p=0&a=0
+Cryptography:
+	https://www.qwant.com/?client=plgn-firefox-sb&q=cryptography&t=images&o=0%3A5886DF7B1E2C53C1329C7988396998BF892A64B6
+Decition Tree:
+	https://www.qwant.com/?client=plgn-firefox-sb&q=decition+tree+classifier&t=images&o=0%3A23B7B332937F20C36543EA08CDB9F174A004566A

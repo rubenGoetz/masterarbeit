@@ -12,7 +12,7 @@
 \grouplogo{} 
 
 %% Gruppenname und Breite (Standard: 89 mm)
-\groupname{Software Design and Quality}
+\groupname{}
 %\groupnamewidth{89mm}
 
 % Beginn der Präsentation
@@ -27,13 +27,14 @@
 % Literatur 
  
 \usepackage[citestyle=authoryear,bibstyle=numeric,hyperref,backend=biber]{biblatex}
-%\addbibresource{presentation.bib}
+%\addbibresource{slides.bib}
 \bibhang1em
 
 \usepackage{lipsum}
 \usepackage{booktabs}
 \usepackage{subcaption}
-
+\usepackage{xcolor}
+\usepackage{xurl}
 
 % 20-25 Minuten ist die Norm für einen Mastervortrag. 
 % Eine kurze Einleitung für Menschen, die SAT Solving 
@@ -51,6 +52,22 @@
 %...
 %\end{minipage}%
 
+% 1: Anderes Titelbild vielleicht?
+% x 2: exemplary
+% x 3: Use Cases (+Bilder)
+% x 4: Es ist mir in der SAT Community ein wichtiges Anliegen zu verbreiten, dass Solver à la MallobSat eben nicht "Portfolio mit ein bisschen Clause Sharing" sind sondern "Clause Sharing Solver with some added diversification over solver threads". Insbes. ist erwiesen, dass clause sharing nicht einfach Effizienz verbessert sondern das primäre Standbein für die Skalierbarkeit ist. Evtl kannst du diese Zwischentöne berücksichtigen
+% x 5: 1st mention of Gimsatul: Zitat (Autoren, Jahr) dahinter. Generell auch Highlighting, z.B. fett, für wichtige Wörter?
+% x 6: "[Schreiber&Sanders. 2023]" => "[Schreiber&Sanders 2024]". Ebenso kein Punkt bei Slide7
+% 10: erklärst du internal vs. external hier?
+% x 12: Details zum rechten Plot: Scale, Setup (Kissat / Gimsatul / ...)? Solche Dinge mach ich gerne in kleiner grauer Schrift unter den Plot, dann schnallt jeder dass es keine essentiellen Infos sind aber man kann sie tz. lesen
+% x 13: "Benchmarks" Komisch formuliert. Die Benchmarks kommen von der International SAT Competition 2024. Bezogen hast du sie via GBD (aber das ist ein Detail).
+% x 15: Speedup über welche Baseline?
+% x 16: Gimsatul vs. Kissat deutlich machen
+% x 17ff: Ich finde nicht, dass du unter den Plots so volle Captions brauchst, ich würde eher wie zu 12 angedeutet Basic Infos Schlagwort-artig in grau drunterschreiben (hier z.B. die Scale)
+% x 18: Titel fehlt
+% x 19 und vorherige: Titel der Folie evtl. pro Slide weiter konkretisieren?
+% x 22: hier besonders, was ich zu 17 geschrieben hab
+
 \begin{document}
 
 %Titelseite
@@ -58,7 +75,7 @@
 	\titlepage
 \end{frame}
 
-%%%%%%%%%%%%%%%%%%%555
+%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
 \begin{frame}{Introduction}
@@ -71,10 +88,13 @@
     \end{block}
 
     \begin{exampleblock}{$F = (a \lor b) \land (\lnot a \lor c \lor d)$}
-        Is SAT for examplary assignment $a = false, b = true, c = false, d = false$
+        Is SAT for exemplary assignment $a = false, b = true, c = false, d = false$
     \end{exampleblock}
 \end{frame}
 
+\urldef{\sudokuurl}\url{https://sudoku.com/}
+\urldef{\cryptourl}\url{https://thebestvpn.com/cryptography/}
+\urldef{\aiurl}\url{https://medium.com/}
 \begin{frame}{Introduction}
     \begin{minipage}{.45\textwidth}
         \begin{block}{Usecases}
@@ -91,9 +111,9 @@
     \end{minipage}
     \hfill
     \begin{minipage}{.45\textwidth}
-        \includegraphics[scale=.35]{images/Sudoku.png}
-        \includegraphics[scale=.35]{images/Cryptography.png}
-        \includegraphics[scale=.35]{images/decition_tree.png}
+        \includegraphics[scale=.075]{images/Sudoku.png}\footnote{\sudokuurl}
+        \includegraphics[scale=.35]{images/Cryptography.png}\footnote{\cryptourl}
+        \includegraphics[scale=.35]{images/decition_tree.png}\footnote{\aiurl}
     \end{minipage}
 \end{frame}
 
@@ -118,6 +138,7 @@
                 \item Annual SAT competition includes cloud track since 2020
                 % \item MallobSat
             \end{itemize}
+            \item[$\Rightarrow$] Clause Sharing Solver
         \end{itemize}
     \end{block}
 \end{frame}
@@ -127,7 +148,7 @@
         \begin{itemize}
             \item Most research focuses on runtime
             \item Running independent solver engines comes with inherent memory redundancy
-            \item[$\Rightarrow$] Gimsatul utilizes shared clauses in Memory
+            \item[$\Rightarrow$] Gimsatul utilizes shared clauses in Memory [\href{https://arxiv.org/pdf/2207.13577}{Fleury\&Biere~2022}]
         \end{itemize}
     \end{block}
 
@@ -141,12 +162,12 @@
 \end{frame}
 
 % Ich hab Mallob jetzt als 2023 anegeben, aber das Paper aus 2024 verlinkt
-\begin{frame}{How MallobSat Works [\href{https://www.jair.org/index.php/jair/article/download/15827/27072}{Schreiber\&Sanders.~2023}]}
+\begin{frame}{How MallobSat Works [\href{https://www.jair.org/index.php/jair/article/download/15827/27072}{Schreiber\&Sanders~2024}]}
     \center
     \includegraphics[scale=.8]{figures/mallob_architecture.pdf}
 \end{frame}
 
-\begin{frame}{How Gimsatul Works [\href{https://arxiv.org/pdf/2207.13577}{Fleury\&Biere.~2022}]}
+\begin{frame}{How Gimsatul Works [\href{https://arxiv.org/pdf/2207.13577}{Fleury\&Biere~2022}]}
     \center
     \includegraphics[scale=1.5]{figures/gimsatul_architecture.pdf}
 \end{frame}
@@ -218,7 +239,8 @@
     \hfill
     \begin{minipage}{0.45\textwidth}
         \center
-        \includegraphics[scale=.8]{plots/config_compare/search_only_compare.pdf}
+        \includegraphics[scale=.8]{plots/config_compare/search_only_compare.pdf}\\
+        \textcolor{gray}{Same configuration of one Gimsatul instace per node. Once with \textit{search only} and once with pre- and inprocessing}
     \end{minipage}%
 
 \end{frame}
@@ -228,9 +250,7 @@
 \section{Experimental Evaluation}
 \begin{frame}{Benchmarks \& Configuration}
     \begin{block}{Benchmarks}
-        Benchmarks were provided by Iser and Jabs in 
-        their Global Benchmark Database. Specifically, 
-        we used the track \textit{main\_2024}.
+        We used the benchmarks from the international SAT Competition 2024. Specifically, the track \textit{main\_2024}.
     \end{block}
 
     \begin{block}{Configuration}
@@ -252,7 +272,7 @@
     \includegraphics[scale=1]{plots/cumulative_runtime/scalability_gim.pdf}
 \end{frame}
 
-\begin{frame}{Speedups}
+\begin{frame}{Speedups over Serial Kissat [\href{https://cca.informatik.uni-freiburg.de/papers/BiereFallerFazekasFleuryFroleyksPollitt-SAT-Competition-2024-solvers.pdf}{Biere et al.~2024}]}
     \begin{minipage}{.45\textwidth}
         \noindent
         \center
@@ -283,49 +303,98 @@
     \begin{minipage}{0.45\textwidth}
         \center
         \includegraphics[scale=.8]{plots/cumulative_runtime/scalability_gim.pdf}\\
-        Scalability of our approach
+        Scalability of our approach with only Gimsatul as solver enigines
     \end{minipage}
     \hfill
     \begin{minipage}{0.45\textwidth}
         \center
         \includegraphics[scale=.8]{plots/cumulative_runtime/scalability_kis.pdf}\\
-        Scalability of MallobSat%' default configuration
+        Scalability of MallobSat with only Kissat as solver engines%' default configuration
     \end{minipage}
 \end{frame}
 
-\begin{frame}{Comparison to MallobSat}
-    \center
-    \includegraphics[scale=.8]{plots/square_runtime_compare/square_runtime_16node.pdf}\\
-    Runtime Comparison between MallobSat and our approach, using 16 nodes.
+\begin{frame}{Comparison to MallobSat -- Runtime}
+    \begin{minipage}{.45\textwidth}
+        \center
+        \includegraphics[scale=.8]{plots/square_runtime_compare/square_runtime_16node.pdf}\\
+    \end{minipage}
+    \hfill
+    \begin{minipage}{.45\textwidth}
+        \begin{itemize}
+            \item \textcolor{gray}{x-axis: Our approach with only Gimsatul as solver enigines}
+            \item \textcolor{gray}{y-axis: MallobSat with only Kissat as solver engines}
+            \item \textcolor{gray}{log scale}
+        \end{itemize}
+        %Runtime Comparison between MallobSat and our approach, using 16 nodes.
+    \end{minipage}
 \end{frame}
 
-\begin{frame}{}
-    \center
-    \includegraphics[scale=.8]{plots/square_mem_compare/square_mem_16node.pdf}\\
-    Memory Comparison between MallobSat and our approach, using 16 nodes.
+\begin{frame}{Comparison to MallobSat -- Memory Consumption}
+    \begin{minipage}{.45\textwidth}
+        \center
+        \includegraphics[scale=.8]{plots/square_mem_compare/square_mem_16node.pdf}\\
+    \end{minipage}
+    \hfill
+    \begin{minipage}{.45\textwidth}
+        \begin{itemize}
+            \item \textcolor{gray}{x-axis: Our approach with only Gimsatul as solver enigines}
+            \item \textcolor{gray}{y-axis: MallobSat with only Kissat as solver engines}
+            \item \textcolor{gray}{log scale}
+        \end{itemize}
+        %Memory Comparison between MallobSat and our approach, using 16 nodes.
+    \end{minipage}
 \end{frame}
 
-\begin{frame}{Comparison to MallobSat}
-    \center
-    \includegraphics[scale=.8]{plots/16node_compare/mem_ratio_over_vars.pdf}\\
-    Memory ratios between MallobSat and our approach, using 16 nodes. Each data point corresponds to a benchmark instance.
+\begin{frame}{Comparison to MallobSat -- Memory Ratios}
+    \begin{minipage}{.45\textwidth}
+        \center
+        \includegraphics[scale=.8]{plots/16node_compare/mem_ratio_over_vars.pdf}\\
+    \end{minipage}
+    \hfill
+    \begin{minipage}{.45\textwidth}
+        \begin{itemize}
+            \item \textcolor{gray}{Our Approach with only Gimsatul as solver engines}
+            \item \textcolor{gray}{MallobSat with only Kissat as solver engines}
+            \item \textcolor{gray}{Experiments on 16 nodes (768 cores)}
+            \item \textcolor{gray}{Each data point corresponds to a benchmark instance}
+        \end{itemize}
+        %Memory ratios between MallobSat and our approach, using 16 nodes. Each data point corresponds to a benchmark instance.
+    \end{minipage}
 \end{frame}
 
-\begin{frame}{Comparison to MallobSat}
-    \center
-    \includegraphics[scale=.8]{plots/16node_compare/mem_gm_over_vars.pdf}\\
-    Geometric means for memory ratios between MallobSat and our approach per second, using 16 nodes. Each data point corresponds to a benchmark instance.
+\begin{frame}{Comparison to MallobSat -- Memory Geometric Mean}
+    \begin{minipage}{.45\textwidth}
+        \includegraphics[scale=.8]{plots/16node_compare/mem_gm_over_vars.pdf}    
+    \end{minipage}
+    \hfill
+    \begin{minipage}{.45\textwidth}
+        \begin{itemize}
+            \item \textcolor{gray}{Our Approach with only Gimsatul as solver engines}
+            \item \textcolor{gray}{MallobSat with only Kissat as solver engines}
+            \item \textcolor{gray}{Geometric mean ratiso between MallobSats default configuration and our Approach per second}
+        \end{itemize}
+        %Geometric means for memory ratios between MallobSat and our approach per second, using 16 nodes. Each data point corresponds to a benchmark instance.
+    \end{minipage}
 \end{frame}
 
-\begin{frame}{Comparison to MallobSat}
-    \center
-    \includegraphics[scale=.8]{plots/16node_compare/mem_ratio_per_second.pdf}\\
-    Memory ratios per second for all instances that reached the timeout of $300\,$s (both with MallobSat and our approach), using 16 nodes. % The lines were smoothed, using a sliding window of size five seconds and calculating its geometric mean.
+\begin{frame}{Comparison to MallobSat -- Ratios per Second}
+    \begin{minipage}{.45\textwidth}
+        \includegraphics[scale=.8]{plots/16node_compare/mem_ratio_per_second.pdf}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{.45\textwidth}
+        \begin{itemize}
+            \item \textcolor{gray}{Our Approach with only Gimsatul as solver engines}
+            \item \textcolor{gray}{MallobSat with only Kissat as solver engines}
+            \item \textcolor{gray}{Memory ratios per second for all instances that reached the timeout of $300\,$s}
+        \end{itemize}
+        % (both with MallobSat and our approach), using 16 nodes. % The lines were smoothed, using a sliding window of size five seconds and calculating its geometric mean.
+    \end{minipage}    
 \end{frame}
 
-\begin{frame}{Comparison to MallobSat}
+\begin{frame}{Comparison to MallobSat -- Solved per Memory}
     \center
-    \begin{table}[scale=.75]
+    \begin{table}%[scale=1.5]
         \center
         \begin{tabular}{ ccccc }
           \toprule
@@ -341,7 +410,8 @@
         \end{tabular}
     \end{table}
     \vfill
-    Solved instances per GB of overall used memory in the middle and the same values normalized by the number of cores on the right.
+    \textcolor{gray}{Solved instances per GB of used Memory}
+    %Solved instances per GB of overall used memory in the middle and the same values normalized by the number of cores on the right.
 \end{frame}
 
 \begin{frame}{Interesting Tidbits}
@@ -376,7 +446,7 @@
         \end{tabular}
     \end{table}
     \vfill
-    Geometric mean speedups per family and setup, for families comprising at least 5 instances and a calculatable speedup.
+    %Geometric mean speedups per family and setup, for families comprising at least 5 instances and a calculatable speedup.
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
