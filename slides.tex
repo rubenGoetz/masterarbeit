@@ -1,22 +1,39 @@
 
-\documentclass{beamer}
+%% Beispiel-Präsentation mit LaTeX Beamer im KIT-Design
+%% entsprechend den Gestaltungsrichtlinien vom Februar 2025
+%%
+%% Siehe https://sdq.kastel.kit.edu/wiki/Dokumentvorlagen
 
-\usetheme{Darmstadt}
-\usecolortheme{beaver}
-\setbeamertemplate{footline}[frame number]
+%% Beispiel-Präsentation
+\documentclass[]{sdqbeamer} 
+ 
+%% Gruppenlogo, muss im Verezeichnis logos/ liegen
+%% falls kein Gruppenlogo gewünscht, bitte \grouplogo{} aufrufen
+\grouplogo{} 
 
-\usepackage{ulem}
-\usepackage{tikz}
-\usepackage{subcaption}
-\usepackage{booktabs}
-\usepackage{subcaption}
+%% Gruppenname und Breite (Standard: 89 mm)
+\groupname{Software Design and Quality}
+%\groupnamewidth{89mm}
+
+% Beginn der Präsentation
 
 %Information to be included in the title page:
 \title{Combining Memory-Efficient Parallel SAT Solving and Distributed Clause Sharing}
 \subtitle{Master Thesis}
 \author{Ruben Götz}
-%\institute{Overleaf}
-\date{11.9.2025}
+
+\date[11.\,9.\,2025]{11. September 2025}
+
+% Literatur 
+ 
+\usepackage[citestyle=authoryear,bibstyle=numeric,hyperref,backend=biber]{biblatex}
+%\addbibresource{presentation.bib}
+\bibhang1em
+
+\usepackage{lipsum}
+\usepackage{booktabs}
+\usepackage{subcaption}
+
 
 % 20-25 Minuten ist die Norm für einen Mastervortrag. 
 % Eine kurze Einleitung für Menschen, die SAT Solving 
@@ -36,7 +53,12 @@
 
 \begin{document}
 
-\frame{\titlepage}
+%Titelseite
+\begin{frame}[title white vertical, picture=images/palladio_bauplan]
+	\titlepage
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%555
 
 \section{Introduction}
 \begin{frame}{Introduction}
@@ -113,12 +135,12 @@
 % Ich hab Mallob jetzt als 2023 anegeben, aber das Paper aus 2024 verlinkt
 \begin{frame}{How MallobSat Works [\href{https://www.jair.org/index.php/jair/article/download/15827/27072}{Schreiber\&Sanders.~2023}]}
     \center
-    \includegraphics[scale=.45]{figures/mallob_architecture.pdf}
+    \includegraphics[scale=.8]{figures/mallob_architecture.pdf}
 \end{frame}
 
 \begin{frame}{How Gimsatul Works [\href{https://arxiv.org/pdf/2207.13577}{Fleury\&Biere.~2022}]}
     \center
-    \includegraphics[scale=.8]{figures/gimsatul_architecture.pdf}
+    \includegraphics[scale=1.5]{figures/gimsatul_architecture.pdf}
 \end{frame}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%55
@@ -126,7 +148,7 @@
 \section{Our Architecture}
 \begin{frame}{Our Architecture}
     \center
-    \includegraphics[scale=.45]{figures/architecture.pdf}
+    \includegraphics[scale=.8]{figures/architecture.pdf}
 \end{frame}
 
 \begin{frame}{Our Architecture}
@@ -188,7 +210,7 @@
     \hfill
     \begin{minipage}{0.45\textwidth}
         \center
-        \includegraphics[scale=.35]{plots/config_compare/search_only_compare.pdf}
+        \includegraphics[scale=.8]{plots/config_compare/search_only_compare.pdf}
     \end{minipage}%
 
 \end{frame}
@@ -219,70 +241,82 @@
 
 \begin{frame}{Runtime}
     \center
-    \includegraphics[scale=.55]{plots/cumulative_runtime/scalability_gim.pdf}
+    \includegraphics[scale=1]{plots/cumulative_runtime/scalability_gim.pdf}
 \end{frame}
 
 \begin{frame}{Speedups}
-    \center
-    \includegraphics[scale=.3]{plots/speedups_gim.pdf}
-    
-    \begin{table}[!h]
+    \begin{minipage}{.45\textwidth}
+        \noindent
         \center
-        \begin{tabular}{ cccccc }
-          \toprule
-          \#cores & 48 & 96 & 192 & 384 & 768 \\
-          gm Speedup & 5.357 & 7.384 & 8.146 & 9.720 & 10.260 \\
-          \bottomrule
-        \end{tabular}
+        \includegraphics[scale=.6]{plots/speedups_gim.pdf}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{.45\textwidth}
+        \noindent
+        \center
+        \begin{table}[!h]
+            \begin{tabular}{ cccc }
+                \toprule
+                \#cores & gm Speedup\\
+                \midrule
+                48 & 5.357\\
+                96 & 7.384\\
+                192 & 8.146\\
+                384 & 9.720\\
+                768 & 10.260\\
+              \bottomrule
+            \end{tabular}
         %\caption{Geometric mean speedups for number of cores.}
     \end{table}
+    \end{minipage}
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \begin{minipage}{0.45\textwidth}
         \center
-        \includegraphics[scale=.3]{plots/cumulative_runtime/scalability_gim.pdf}
+        \includegraphics[scale=.8]{plots/cumulative_runtime/scalability_gim.pdf}\\
         Scalability of our approach
     \end{minipage}
     \hfill
     \begin{minipage}{0.45\textwidth}
         \center
-        \includegraphics[scale=.3]{plots/cumulative_runtime/scalability_kis.pdf}
+        \includegraphics[scale=.8]{plots/cumulative_runtime/scalability_kis.pdf}\\
         Scalability of MallobSat%' default configuration
     \end{minipage}
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \includegraphics[scale=.45]{plots/square_runtime_compare/square_runtime_16node.pdf}\\
+    \includegraphics[scale=.8]{plots/square_runtime_compare/square_runtime_16node.pdf}\\
     Runtime Comparison between MallobSat and our approach, using 16 nodes.
 \end{frame}
 
 \begin{frame}{}
     \center
-    \includegraphics[scale=.45]{plots/square_mem_compare/square_mem_16node.pdf}\\
+    \includegraphics[scale=.8]{plots/square_mem_compare/square_mem_16node.pdf}\\
     Memory Comparison between MallobSat and our approach, using 16 nodes.
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \includegraphics[scale=.45]{plots/16node_compare/mem_ratio_over_vars.pdf}\\
+    \includegraphics[scale=.8]{plots/16node_compare/mem_ratio_over_vars.pdf}\\
     Memory ratios between MallobSat and our approach, using 16 nodes. Each data point corresponds to a benchmark instance.
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \includegraphics[scale=.425]{plots/16node_compare/mem_gm_over_vars.pdf}\\
+    \includegraphics[scale=.8]{plots/16node_compare/mem_gm_over_vars.pdf}\\
     Geometric means for memory ratios between MallobSat and our approach per second, using 16 nodes. Each data point corresponds to a benchmark instance.
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \includegraphics[scale=.45]{plots/16node_compare/mem_ratio_per_second.pdf}\\
+    \includegraphics[scale=.8]{plots/16node_compare/mem_ratio_per_second.pdf}\\
     Memory ratios per second for all instances that reached the timeout of $300\,$s (both with MallobSat and our approach), using 16 nodes. % The lines were smoothed, using a sliding window of size five seconds and calculating its geometric mean.
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
+    \center
     \begin{table}[scale=.75]
         \center
         \begin{tabular}{ ccccc }
@@ -311,8 +345,7 @@
             family	&	\#	&	1node	&	2node	&	4node	&	8node	&	16node\\
             \midrule
             heule-folkman	&	11	&	0.425	&	-	&	0.416	&	0.449	&	0.444\\
-            %cryptography-simon	&	10	&	0.221	&	0.234	&	0.227	&	0.2	&	0.18\\
-            crypto-simon	&	10	&	0.221	&	0.234	&	0.227	&	0.2	&	0.18\\
+            cryptography-simon	&	10	&	0.221	&	0.234	&	0.227	&	0.2	&	0.18\\
             miter	&	47	&	1.705	&	1.835	&	1.997	&	2.25	&	2.013\\
             \vdots &&&&&&\\
             % random-circuits	&	15	&	2.598	&	3.095	&	3.527	&	3.849	&	3.839\\
@@ -329,8 +362,7 @@
             % hamiltonian	&	40	&	8.968	&	14.409	&	19.398	&	23.315	&	26.351\\
             % argumentation	&	21	&	13.01	&	16.268	&	18.577	&	21.941	&	20.716\\
             independent-set	&	15	&	16.442	&	18.038	&	20.981	&	27.173	&	25.9\\
-            %minimum-disagreement-parity	&	17	&	40.311	&	22.119	&	24.766	&	46.884	&	58.316\\
-            min-dis-parity	&	17	&	40.311	&	22.119	&	24.766	&	46.884	&	58.316\\
+            minimum-disagreement-parity	&	17	&	40.311	&	22.119	&	24.766	&	46.884	&	58.316\\
             rbsat	&	5	&	47.606	&	64.654	&	76.039	&	186.204	&	221.286\\
             \bottomrule
         \end{tabular}
@@ -353,7 +385,7 @@
     \begin{block}{Conclusion}
         \begin{itemize}
             \item Succeeded in stated goal to increase memory-efficiency
-            \item Elevator Pitch: \textbf{4x} less memory than default configuration
+            \item Elevator Pitch: \textbf{4x less memory} than default configuration
             \begin{itemize}
                 \item gm of gm of Memory Ratios between MallobSat's default configuration and our approach
             \end{itemize}
