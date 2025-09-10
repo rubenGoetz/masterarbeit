@@ -27,6 +27,13 @@
 % das dann auch den Schwerpunkt deiner MA spiegelt). 
 
 
+%\begin{minipage}{0.5\textwidth}
+%...
+%\end{minipage}%
+%\begin{minipage}{0.5\textwidth}
+%...
+%\end{minipage}%
+
 \begin{document}
 
 \frame{\titlepage}
@@ -34,7 +41,7 @@
 \section{Introduction}
 \begin{frame}{Introduction}
     \begin{block}{SAT Solving}
-        Given a boolean formula (usually in CNF):
+        Given a Boolean formula (usually in CNF):
         \begin{itemize}
             \item Decide whether Formula is SAT
             \item Give assignment if Formula is SAT
@@ -60,6 +67,8 @@
     \end{block}
 \end{frame}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{State of the Art}
 \begin{frame}{State of the Art}
     \begin{block}{Serial SAT solvers}
@@ -73,41 +82,54 @@
         \begin{itemize}
             \item Search Space Partitioning: Divide problem into disjoint subspaces
             \item Portfolio Solvers: Run multiple diverse serial solvers in parallel
-            \item Increase efficiency by sharing clauses
-            \item Distributed SAT solving is on the rise
-            \item Annual SAT competition includes cloud track since 2020
-            \item MallobSat
+            \begin{itemize}
+                \item Increase efficiency by sharing clauses
+                \item Distributed SAT solving is on the rise
+                \item Annual SAT competition includes cloud track since 2020
+                % \item MallobSat
+            \end{itemize}
         \end{itemize}
     \end{block}
 \end{frame}
 
 \begin{frame}{State of the Art}
-    \begin{block}{Memory-Efficiency SAT solving}
+    \begin{block}{Memory-Efficient SAT solving}
         \begin{itemize}
             \item Most research focuses on runtime
             \item Running independent solver engines comes with inherent memory redundancy
             \item[$\Rightarrow$] Gimsatul utilizes shared clauses in Memory
         \end{itemize}
     \end{block}
+
+    \begin{block}{Contributions}
+        \begin{itemize}
+            \item Integrate Gimsatul into MallobSat to combine memory efficiency with scalability
+            \item Implement \textit{search only} approach [\href{https://satres.kikit.kit.edu/papers/2025-sat-streamlining-pre.pdf}{Schreiber et al.~2025}]
+            \item Evaluate approach experimentally
+        \end{itemize}
+    \end{block}
 \end{frame}
 
-\begin{frame}{MallobSat}
+% Ich hab Mallob jetzt als 2023 anegeben, aber das Paper aus 2024 verlinkt
+\begin{frame}{How MallobSat Works [\href{https://www.jair.org/index.php/jair/article/download/15827/27072}{Schreiber\&Sanders.~2023}]}
     \center
     \includegraphics[scale=.45]{figures/mallob_architecture.pdf}
 \end{frame}
 
-\begin{frame}{Gimsatul}
+\begin{frame}{How Gimsatul Works [\href{https://arxiv.org/pdf/2207.13577}{Fleury\&Biere.~2022}]}
     \center
     \includegraphics[scale=.8]{figures/gimsatul_architecture.pdf}
 \end{frame}
 
-\section{Contributions}
-\begin{frame}{Contributions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%55
+
+\section{Our Architecture}
+\begin{frame}{Our Architecture}
     \center
     \includegraphics[scale=.45]{figures/architecture.pdf}
 \end{frame}
 
-\begin{frame}{Contributions}
+\begin{frame}{Our Architecture}
     \begin{block}{Creating the Solver Engine}
         If Gimsatul is part of portfolio:
         \begin{itemize}
@@ -119,7 +141,7 @@
     \end{block}
 \end{frame}
 
-\begin{frame}{Contributions}
+\begin{frame}{Our Architecture}
     \begin{block}{Clause Export}
         \begin{itemize}
             \item All rings export externally if they export internally
@@ -140,6 +162,39 @@
     \end{block}
 \end{frame}
 
+\begin{frame}{Our Architecture}
+    \begin{block}{Diversification}
+        Added \textit{sparse random variable phases} on top of Gimsatuls native diversification:
+        \begin{itemize}
+            \item Flip phases of random variables
+            \item $p = 1 / e$ for $e$ engines in total
+            \item implemented as $p = 1 / (t' * p)$ for $t'$ rings and $p$ processes
+        \end{itemize}
+    \end{block}
+\end{frame}
+
+\begin{frame}{Our Architecture}
+    \begin{minipage}{0.45\textwidth}
+        \center
+        \begin{block}{Search Only}
+            \begin{itemize}
+                \item Proposed by Schreiber, Rigi-Luperti \& Biere in 2025
+                \item Deactivate pre- and inprocessing
+                \item Run single dedicated preprocessing job in the beginning
+                \item Replace jobs with preprocessed formula over time
+            \end{itemize}
+        \end{block}
+    \end{minipage}%
+    \hfill
+    \begin{minipage}{0.45\textwidth}
+        \center
+        \includegraphics[scale=.35]{plots/config_compare/search_only_compare.pdf}
+    \end{minipage}%
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Experimental Evaluation}
 \begin{frame}{Benchmarks \& Configuration}
     \begin{block}{Benchmarks}
@@ -158,11 +213,6 @@
             \item 1 Gimsatul instance per node
             \item 48 threads per node
             \item Search Only approach
-            \begin{itemize}
-                \item Deactivate pre- and inprocessing
-                \item Run single dedicated preprocessing job in the beginning
-                \item Replace jobs with preprocessed formula over time
-            \end{itemize}
         \end{itemize}
     \end{block}
 \end{frame}
@@ -180,7 +230,7 @@
         \center
         \begin{tabular}{ cccccc }
           \toprule
-          \#cores & 1 & 2 & 4 & 8 & 16 \\
+          \#cores & 48 & 96 & 192 & 384 & 768 \\
           gm Speedup & 5.357 & 7.384 & 8.146 & 9.720 & 10.260 \\
           \bottomrule
         \end{tabular}
@@ -189,91 +239,50 @@
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
-    \begin{figure}[!h]
-      \center
-      \begin{subfigure}[c]{.4\textwidth}
+    \begin{minipage}{0.45\textwidth}
         \center
         \includegraphics[scale=.3]{plots/cumulative_runtime/scalability_gim.pdf}
-        \subcaption{Scalability of our approach}
-      \end{subfigure}
-      \hfill
-      \begin{subfigure}[c]{.4\textwidth}
+        Scalability of our approach
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.45\textwidth}
         \center
         \includegraphics[scale=.3]{plots/cumulative_runtime/scalability_kis.pdf}
-        \subcaption{Scalability of MallobSat}
-      \end{subfigure}
-      \caption{Scalability of our approach compared to MallobSat.}
-    \end{figure}
+        Scalability of MallobSat%' default configuration
+    \end{minipage}
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \begin{figure}[c]{}
-      \center
-      \includegraphics[scale=.45]{plots/square_runtime_compare/square_runtime_16node.pdf}
-      \caption{Runtime Comparison between MallobSat and our approach, using 16 nodes.}
-    \end{figure}
+    \includegraphics[scale=.45]{plots/square_runtime_compare/square_runtime_16node.pdf}\\
+    Runtime Comparison between MallobSat and our approach, using 16 nodes.
 \end{frame}
 
 \begin{frame}{}
     \center
-    \begin{figure}[c]{Comparison to MallobSat}
-        \center
-        \includegraphics[scale=.45]{plots/square_mem_compare/square_mem_16node.pdf}
-        \caption{Memory Comparison between MallobSat and our approach, using 16 nodes.}
-    \end{figure}
+    \includegraphics[scale=.45]{plots/square_mem_compare/square_mem_16node.pdf}\\
+    Memory Comparison between MallobSat and our approach, using 16 nodes.
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \begin{figure}[c]{}
-      \center
-      \includegraphics[scale=.45]{plots/16node_compare/mem_ratio_over_vars.pdf}
-      \caption{Memory ratios between MallobSat and our approach, using 16 nodes. Each data point corresponds to a benchmark instance.}
-    \end{figure}
+    \includegraphics[scale=.45]{plots/16node_compare/mem_ratio_over_vars.pdf}\\
+    Memory ratios between MallobSat and our approach, using 16 nodes. Each data point corresponds to a benchmark instance.
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \begin{figure}[c]{}
-      \center
-      \includegraphics[scale=.425]{plots/16node_compare/mem_gm_over_vars.pdf}
-      \caption{Geometric means for memory ratios between MallobSat and our approach per second, using 16 nodes. Each data point corresponds to a benchmark instance.}
-    \end{figure}
+    \includegraphics[scale=.425]{plots/16node_compare/mem_gm_over_vars.pdf}\\
+    Geometric means for memory ratios between MallobSat and our approach per second, using 16 nodes. Each data point corresponds to a benchmark instance.
 \end{frame}
 
 \begin{frame}{Comparison to MallobSat}
     \center
-    \begin{figure}[c]{}
-      \center
-      \includegraphics[scale=.45]{plots/16node_compare/mem_ratio_per_second.pdf}
-      \caption{Memory ratios per second for all instances that reached the timeout of $300\,$s (both with MallobSat and our approach), using 16 nodes.} % The lines were smoothed, using a sliding window of size five seconds and calculating its geometric mean.
-    \end{figure}
+    \includegraphics[scale=.45]{plots/16node_compare/mem_ratio_per_second.pdf}\\
+    Memory ratios per second for all instances that reached the timeout of $300\,$s (both with MallobSat and our approach), using 16 nodes. % The lines were smoothed, using a sliding window of size five seconds and calculating its geometric mean.
 \end{frame}
 
-
-\section{Conclusion}
-\begin{frame}{Conclusion}
-    \begin{block}{Summary}
-        \begin{itemize}
-            \item Integrated Gimsatul into MallobSat as solver engine
-            \item Evaluated approach
-        \end{itemize}
-    \end{block}
-
-    \begin{block}{Conclusion}
-        \begin{itemize}
-            \item Succeeded in stated goal to increase memory-efficiency
-            \item Number for an Elevator Pitch: \textbf{0.25}
-            \begin{itemize}
-                \item gm of gm of Memory Ratios between MAllobSat and our approach
-            \end{itemize}
-            \item Runtime tradeoff
-        \end{itemize}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Conclusion}
+\begin{frame}{Comparison to MallobSat}
     \begin{table}[scale=.75]
         \center
         \begin{tabular}{ ccccc }
@@ -288,9 +297,69 @@
           768 & 0.010 & 0.006 & 7.766 & 4.924\\
           \bottomrule
         \end{tabular}
-        \caption{Solved instances per GB of overall used memory in the middle and the same values normalized by the number of cores on the right.}
     \end{table}
+    \vfill
+    Solved instances per GB of overall used memory in the middle and the same values normalized by the number of cores on the right.
 \end{frame}
 
+\begin{frame}{Interesting Tidbits}
+    \centering
+    \begin{table}[!h]
+        \center
+        \begin{tabular}{ lcccccc }
+            \toprule
+            family	&	\#	&	1node	&	2node	&	4node	&	8node	&	16node\\
+            \midrule
+            heule-folkman	&	11	&	0.425	&	-	&	0.416	&	0.449	&	0.444\\
+            %cryptography-simon	&	10	&	0.221	&	0.234	&	0.227	&	0.2	&	0.18\\
+            crypto-simon	&	10	&	0.221	&	0.234	&	0.227	&	0.2	&	0.18\\
+            miter	&	47	&	1.705	&	1.835	&	1.997	&	2.25	&	2.013\\
+            \vdots &&&&&&\\
+            % random-circuits	&	15	&	2.598	&	3.095	&	3.527	&	3.849	&	3.839\\
+            % planning	&	6	&	2.567	&	3.977	&	4.168	&	4.623	&	4.835\\
+            % software-verification	&	15	&	2.564	&	5.073	&	4.248	&	4.57	&	4.71\\
+            % tseitin-formulas	&	8	&	4.442	&	4.567	&	5.177	&	5.275	&	5.49\\
+            % hardware-verification	&	5	&	4.621	&	5.369	&	5.556	&	6.036	&	6.161\\
+            % scheduling	&	50	&	5.333	&	6.434	&	7.944	&	8.384	&	8.799\\
+            % heule-nol	&	11	&	5.988	&	11.793	&	7.786	&	10.231	&	12.876\\
+            % cryptography-ascon	&	6	&	7.396	&	8.273	&	10.115	&	8.709	&	14.008\\
+            % maxsat-optimum	&	13	&	7.419	&	7.32	&	12.362	&	13.762	&	14.899\\
+            % quantum-kochen-specker	&	10	&	9.356	&	11.237	&	11.186	&	11.137	&	11.005\\
+            % cryptography	&	7	&	6.32	&	16.922	&	9.289	&	21.402	&	23.632\\
+            % hamiltonian	&	40	&	8.968	&	14.409	&	19.398	&	23.315	&	26.351\\
+            % argumentation	&	21	&	13.01	&	16.268	&	18.577	&	21.941	&	20.716\\
+            independent-set	&	15	&	16.442	&	18.038	&	20.981	&	27.173	&	25.9\\
+            %minimum-disagreement-parity	&	17	&	40.311	&	22.119	&	24.766	&	46.884	&	58.316\\
+            min-dis-parity	&	17	&	40.311	&	22.119	&	24.766	&	46.884	&	58.316\\
+            rbsat	&	5	&	47.606	&	64.654	&	76.039	&	186.204	&	221.286\\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \vfill
+    Geometric mean speedups per family and setup, for families comprising at least 5 instances and a calculatable speedup.
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Conclusion}
+\begin{frame}{Conclusion}
+    \begin{block}{Summary}
+        \begin{itemize}
+            \item Integrated Gimsatul into MallobSat as solver engine
+            \item Evaluated approach
+        \end{itemize}
+    \end{block}
+
+    \begin{block}{Conclusion}
+        \begin{itemize}
+            \item Succeeded in stated goal to increase memory-efficiency
+            \item Elevator Pitch: \textbf{4x} less memory than default configuration
+            \begin{itemize}
+                \item gm of gm of Memory Ratios between MallobSat's default configuration and our approach
+            \end{itemize}
+            \item Runtime tradeoff
+        \end{itemize}
+    \end{block}
+\end{frame}
 
 \end{document}
