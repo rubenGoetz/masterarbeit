@@ -154,7 +154,7 @@
 
     \begin{block}{Contributions}
         \begin{itemize}
-            \item Integrate Gimsatul into MallobSat to combine memory efficiency with scalability
+            \item Integrate Gimsatul into MallobSat [\href{https://www.jair.org/index.php/jair/article/download/15827/27072}{Schreiber\&Sanders~2024}] to combine memory efficiency with scalability
             \item Implement \textit{search only} approach [\href{https://satres.kikit.kit.edu/papers/2025-sat-streamlining-pre.pdf}{Schreiber et al.~2025}]
             \item Evaluate approach experimentally
         \end{itemize}
@@ -258,6 +258,7 @@
             \item Experiments done on SuperMUC
             \begin{itemize}
                 \item 1 node contains 48 cores (96 Hardware threads)
+                \item 96 GB memory per node (2 GB per core)
                 \item used up to 16 nodes (768 cores)
             \end{itemize}
             \item 1 Gimsatul instance per node
@@ -323,7 +324,8 @@
         \begin{itemize}
             \item \textcolor{gray}{x-axis: Our approach with only Gimsatul as solver enigines}
             \item \textcolor{gray}{y-axis: MallobSat with only Kissat as solver engines}
-            \item \textcolor{gray}{log scale}
+            \item \textcolor{gray}{Only instances that were solved by both solvers}
+            \item \textcolor{gray}{Experiments on 16 nodes (768 cores)}
         \end{itemize}
         %Runtime Comparison between MallobSat and our approach, using 16 nodes.
     \end{minipage}
@@ -339,7 +341,8 @@
         \begin{itemize}
             \item \textcolor{gray}{x-axis: Our approach with only Gimsatul as solver enigines}
             \item \textcolor{gray}{y-axis: MallobSat with only Kissat as solver engines}
-            \item \textcolor{gray}{log scale}
+            \item \textcolor{gray}{Only instances that were solved by both solvers}
+            \item \textcolor{gray}{Experiments on 16 nodes (768 cores)}
         \end{itemize}
         %Memory Comparison between MallobSat and our approach, using 16 nodes.
     \end{minipage}
